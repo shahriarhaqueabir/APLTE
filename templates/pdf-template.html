@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="utf-8">
+<title>{{TITLE}}</title>
+
+<!-- Design tokens + base styles are injected from src/render/style.js (cssForDoc).
+     Edit the tokens there (DESIGN object) to change fonts/sizes/margins globally. -->
+<style>
+{{CSS}}
+</style>
+
+<style>
+section.cv-section { break-inside: auto; }
+article.experience { break-inside: avoid; margin-bottom: 0.3em; }
+h2 + p, h2 + ul, h2 + article { break-before: avoid; }
+h3 + p, h3 + ul { break-before: avoid; }
+li { break-inside: avoid; orphans: 2; widows: 2; }
+p { orphans: 2; widows: 2; }
+@media print {
+  body { width: 100%; max-width: none; margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  section { break-inside: auto; }
+  article { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+{{BODY}}
+</body>
+</html>

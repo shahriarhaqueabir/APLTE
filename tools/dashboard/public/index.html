@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>jobbot Control Tower</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg-gradient: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #0a0a0f 100%);
+    --panel: rgba(20, 15, 40, 0.7);
+    --panel-solid: #140f28;
+    --line: rgba(139, 92, 246, 0.2);
+    --text: #f0e6ff;
+    --muted: #9b8ec4;
+    --accent: #c084fc;
+    --accent-glow: rgba(192, 132, 252, 0.4);
+    --pink: #ff6b9d;
+    --pink-glow: rgba(255, 107, 157, 0.4);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.4);
+    --yellow: #fbbf24;
+    --yellow-glow: rgba(251, 191, 36, 0.4);
+    --green: #34d399;
+    --green-glow: rgba(52, 211, 153, 0.4);
+    --red: #f87171;
+    --red-glow: rgba(248, 113, 113, 0.4);
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --bad: #f87171;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 8px 32px rgba(139, 92, 246, 0.15);
+    --shadow-glow: 0 0 20px rgba(192, 132, 252, 0.1);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #0a0a0f;
+    background-image:
+      radial-gradient(900px 620px at 6% -10%, rgba(255, 107, 157, 0.14), transparent 62%),
+      radial-gradient(1000px 720px at 102% -6%, rgba(34, 211, 238, 0.12), transparent 62%),
+      radial-gradient(900px 900px at 50% 118%, rgba(192, 132, 252, 0.14), transparent 62%),
+      var(--bg-gradient);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: rgba(192, 132, 252, 0.35); color: #fff; }
+  .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; background: var(--accent); color: #0a0a0f; font-weight: 700; font-size: 14px; padding: 10px 16px; border-radius: 0 0 10px 0; }
+  .skip-link:focus { left: 0; }
+  a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
+  a:hover { color: var(--pink); text-decoration: underline; }
+  .app { display: flex; min-height: 100vh; min-height: 100dvh; }
+
+  /* Sidebar - glassmorphism */
+  .sidebar {
+    width: 220px; flex: none;
+    background: rgba(20, 15, 40, 0.6);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--line);
+    position: sticky; top: 0; height: 100vh; height: 100dvh;
+    display: flex; flex-direction: column;
+    padding: 20px 14px; gap: 4px;
+    box-shadow: var(--shadow);
+    overflow-y: auto;
+  }
+  .brand { font-size: 18px; font-weight: 800; padding: 8px 12px 18px; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--pink), var(--accent), var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .brand small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; -webkit-text-fill-color: var(--muted); }
+  .nav-btn {
+    display: block; width: 100%; text-align: left;
+    background: transparent; color: var(--text);
+    border: 1px solid transparent; border-radius: var(--radius-sm);
+    padding: 10px 14px; font-size: 13px; cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+  }
+  .nav-btn:hover { background: rgba(192, 132, 252, 0.1); border-color: var(--line); }
+  .nav-btn.active {
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.2), rgba(255, 107, 157, 0.1));
+    border-color: var(--accent); color: var(--accent); font-weight: 600;
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  .nav-btn:focus-visible, .btn:focus-visible, .tab:focus-visible, .row-control:focus-visible,
+  a:focus-visible, summary:focus-visible, .clickable:focus-visible,
+  .acard-actions button:focus-visible, .actions button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn:active, .nav-btn:active, .tab:active, .acard-actions button:active, .actions button:active { transform: translateY(1px); }
+  .nav-group-label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; padding: 12px 14px 4px; font-weight: 600; }
+  .side-foot { margin-top: auto; color: var(--muted); font-size: 12px; padding: 12px; border-top: 1px solid var(--line); }
+
+  /* Content + top bar */
+  .content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 14px 28px;
+    background: rgba(10, 10, 15, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--text), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .topbar .sub { color: var(--muted); font-size: 12px; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+  .live { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; }
+  .pulse { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 var(--green-glow); animation: pulse 1.8s infinite; }
+  .pulse.off { background: var(--muted); animation: none; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 var(--green-glow);} 70%{box-shadow:0 0 0 8px rgba(52,211,153,0);} 100%{box-shadow:0 0 0 0 rgba(52,211,153,0);} }
+  .btn {
+    background: rgba(192, 132, 252, 0.1); color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 8px 14px; font-size: 13px; cursor: pointer;
+    transition: all 0.2s ease; font-weight: 500;
+  }
+  .btn:hover { background: rgba(192, 132, 252, 0.2); border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.primary { border-color: var(--accent); color: var(--accent); }
+  .btn.danger { border-color: var(--red); color: var(--red); }
+  main { padding: 0 0 60px; }
+
+  /* Views */
+  .view { display: none; padding: 24px 28px 40px; }
+  .view.active { display: block; }
+  .section-title { font-size: 20px; font-weight: 700; border-bottom: 1px solid var(--line); padding-bottom: 10px; margin: 4px 0 18px; letter-spacing: -0.5px; }
+  .sub-title { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; margin: 20px 0 10px; font-weight: 600; }
+  .section-title, .topbar h1, .detail-box h3, .sub-title { text-wrap: balance; }
+  .hint, .muted { text-wrap: pretty; }
+
+  /* Bento Grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 18px; }
+  .bento { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 18px; align-content: start; }
+  .grid > *, .bento > * { min-width: 0; }
+  #healthkpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  #kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .bento-wide { grid-column: span 2; }
+  .bento-full { grid-column: 1 / -1; }
+  .card {
+    background: var(--panel); backdrop-filter: blur(12px);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 20px; box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--pink), var(--accent), var(--cyan));
+    opacity: 0.6;
+  }
+  .card:hover { border-color: var(--accent); box-shadow: var(--shadow), var(--shadow-glow); transform: translateY(-2px); }
+  .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+  .card .value { font-size: 32px; font-weight: 800; margin-top: 6px; letter-spacing: -1px; font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, var(--text), var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .gcard {
+    background: var(--panel); backdrop-filter: blur(12px);
+    border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 14px 16px; transition: all 0.2s;
+  }
+  .gcard:hover { border-color: var(--accent); }
+  .gcard .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+  .gcard .value { font-size: 18px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+  /* Badges - candy colors */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.2px; }
+  .ok { background: rgba(52, 211, 153, 0.15); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.3); }
+  .warn { background: rgba(251, 191, 36, 0.15); color: var(--yellow); border: 1px solid rgba(251, 191, 36, 0.3); }
+  .bad { background: rgba(248, 113, 113, 0.15); color: var(--red); border: 1px solid rgba(248, 113, 113, 0.3); }
+  .muted { color: var(--muted); font-size: 12px; }
+  .badge.muted { background: rgba(155, 142, 196, 0.15); color: var(--muted); border: 1px solid rgba(155, 142, 196, 0.2); }
+
+  /* Tables - glassmorphism */
+  .table-wrap { width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; border-radius: var(--radius); border: 1px solid var(--line); background: rgba(10, 10, 15, 0.35); }
+  .table-wrap::-webkit-scrollbar, .console::-webkit-scrollbar { width: 10px; height: 10px; }
+  .table-wrap::-webkit-scrollbar-thumb, .console::-webkit-scrollbar-thumb { background: rgba(192, 132, 252, 0.35); border-radius: 999px; }
+  .table-wrap::-webkit-scrollbar-thumb:hover, .console::-webkit-scrollbar-thumb:hover { background: rgba(192, 132, 252, 0.55); }
+  .table-wrap::-webkit-scrollbar-track, .console::-webkit-scrollbar-track { background: transparent; }
+  .table-wrap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; line-height: 1.5; }
+  th { color: var(--muted); font-weight: 600; background: rgba(20, 15, 40, 0.8); font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; }
+  tr:hover { background: rgba(192, 132, 252, 0.05); }
+  .clickable { cursor: pointer; }
+  .clickable:hover { background: rgba(192, 132, 252, 0.08); }
+  .row-control { border: 0; padding: 2px 0; background: transparent; color: var(--accent); font: inherit; text-align: left; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; transition: color 0.2s; }
+  .row-control:hover { color: var(--pink); }
+  .empty { color: var(--muted); font-style: italic; }
+  .outputs { max-width: 320px; word-break: break-all; font-size: 12px; color: var(--muted); }
+  .detail { display: none; }
+  .detail.open { display: table-row; }
+  .detail td { padding: 16px 18px; background: rgba(10, 10, 15, 0.5); }
+  .detail-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; backdrop-filter: blur(12px); }
+  .detail-box h3 { margin: 0 0 12px; font-size: 16px; font-weight: 700; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin: 5px 0; font-size: 13px; align-items: center; }
+  .row b { color: var(--muted); min-width: 110px; font-weight: 600; }
+  .step { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 2px; background: rgba(155, 142, 196, 0.3); transition: all 0.3s; }
+  .step.done { background: var(--green); box-shadow: 0 0 8px var(--green-glow); }
+
+  /* Filter + bulk bars - glassmorphism */
+  .bar {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+    background: var(--panel); backdrop-filter: blur(12px);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 12px 16px; margin-bottom: 14px;
+  }
+  .bar input:not([type="checkbox"]):not([type="radio"]), .bar select {
+    background: rgba(10, 10, 15, 0.6); color: var(--text);
+    border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 8px 12px; font-size: 13px; min-width: 150px;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  }
+  .bar input:not([type="checkbox"]):not([type="radio"]):focus, .bar select:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); outline: none; }
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+  .bar label { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
+  .bulk-count { font-size: 13px; color: var(--muted); }
+  .rowchk { width: 16px; height: 16px; accent-color: var(--accent); }
+
+  /* Artifact cards - bento */
+  .acards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 8px; }
+  .acard {
+    background: rgba(10, 10, 15, 0.5); border: 1px solid var(--line);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    transition: all 0.2s;
+  }
+  .acard:hover { border-color: var(--accent); background: rgba(192, 132, 252, 0.05); }
+  .acard-name { font-weight: 600; font-size: 13px; }
+  .acard-meta { margin: 4px 0; }
+  .acard-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .acard-actions button, .acard-actions a { font-size: 12px; padding: 5px 10px; border-radius: 6px; border: 1px solid var(--line); background: rgba(192, 132, 252, 0.1); color: var(--text); cursor: pointer; transition: all 0.2s; }
+  .acard-actions button:hover, .acard-actions a:hover { background: rgba(192, 132, 252, 0.2); border-color: var(--accent); }
+  .acard-actions a { color: var(--accent); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+  .actions button { font-size: 12px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: rgba(192, 132, 252, 0.1); color: var(--text); cursor: pointer; transition: all 0.2s; }
+  .actions button:hover { background: rgba(192, 132, 252, 0.2); border-color: var(--accent); }
+  .actions button.sim { border-style: dashed; color: var(--yellow); }
+
+  /* Timeline tabs - candy pills */
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tab { background: rgba(192, 132, 252, 0.08); border: 1px solid var(--line); color: var(--muted); border-radius: 20px; padding: 6px 16px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-weight: 500; }
+  .tab:hover { background: rgba(192, 132, 252, 0.15); color: var(--text); }
+  .tab.active { color: var(--accent); border-color: var(--accent); background: rgba(192, 132, 252, 0.2); box-shadow: 0 0 12px var(--accent-glow); }
+
+  /* Console - terminal style */
+  .console { background: rgba(5, 5, 15, 0.8); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; height: 60vh; overflow: auto; font-family: "Cascadia Code", "JetBrains Mono", "Fira Code", ui-monospace, Consolas, monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; backdrop-filter: blur(12px); font-variant-numeric: tabular-nums; }
+  .console:empty::before { content: "Waiting for log output…"; color: var(--muted); font-style: italic; }
+  .console .ln { color: #c9d1d9; }
+  .console .ln.err { color: var(--red); }
+  .console .ln.sys { color: var(--muted); }
+
+  /* Modal + toast + banner */
+  .hidden { display: none !important; }
+  .modal { position: fixed; inset: 0; border: 0; padding: 0; width: 100%; max-width: none; height: 100%; max-height: none; background: transparent; color: var(--text); z-index: 50; }
+  .modal[open] { display: grid; place-items: center; }
+  .modal::backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); }
+  .modal-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; max-width: 480px; width: 92%; backdrop-filter: blur(20px); box-shadow: var(--shadow), 0 0 40px var(--accent-glow); }
+  .modal-box h3 { margin: 0 0 12px; font-size: 18px; font-weight: 700; }
+  .modal-box p { margin: 0 0 18px; font-size: 13px; color: var(--muted); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 18px; font-size: 13px; z-index: 60; max-width: 420px; backdrop-filter: blur(20px); box-shadow: var(--shadow); }
+  .sim-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 40; text-align: center; padding: 8px; font-size: 12px; font-weight: 700; letter-spacing: 1px; background: linear-gradient(90deg, rgba(251, 191, 36, 0.2), rgba(255, 107, 157, 0.2)); color: var(--yellow); border-bottom: 1px solid var(--yellow); }
+  body.sim .content { padding-top: 30px; }
+  .hint { margin: 0 0 12px; padding: 12px 16px; background: rgba(192, 132, 252, 0.08); border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: 13px; color: var(--muted); }
+  .hint b { color: var(--text); }
+  .persona-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .persona-list span { background: rgba(192, 132, 252, 0.08); border: 1px solid var(--line); padding: 8px 14px; border-radius: 20px; font-size: 13px; transition: all 0.2s; }
+  .persona-list span:hover { border-color: var(--accent); background: rgba(192, 132, 252, 0.15); }
+  .persona-list span b { color: var(--accent); }
+  .error-banner { margin: 16px 24px; padding: 14px; border: 1px solid var(--red); border-radius: var(--radius); background: rgba(248, 113, 113, 0.1); color: var(--red); font-size: 13px; }
+  .system-details { margin-top: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); backdrop-filter: blur(12px); }
+  .system-details summary { padding: 14px 16px; cursor: pointer; font-weight: 600; color: var(--accent); }
+  .system-details[open] .grid { padding: 0 16px 16px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    .pulse { animation: none !important; }
+  }
+  @media (max-width: 800px) {
+    .app { flex-direction: column; }
+    .sidebar { position: static; width: 100%; height: auto; flex-direction: row; overflow-x: auto; white-space: nowrap; padding: 8px; border-right: 0; border-bottom: 1px solid var(--line); }
+    .sidebar nav { display: flex; gap: 6px; }
+    .brand { flex: none; padding: 6px 10px; }
+    .brand small { display: inline; margin-left: 6px; }
+    .nav-btn { width: auto; flex: none; white-space: nowrap; }
+    .side-foot { display: none; }
+    .topbar { padding: 10px 14px; }
+    .view { padding: 16px 14px 32px; }
+    .table-wrap table { min-width: 900px; }
+    .acards { grid-template-columns: 1fr; }
+    #healthkpis, #kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 560px) {
+    .topbar { align-items: flex-start; }
+    .topbar-right { gap: 8px 12px; }
+    .bar input:not([type="checkbox"]):not([type="radio"]), .bar select { min-width: 0; width: 100%; }
+    .grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    .bento { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+    #healthkpis, #kpis { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="sim-banner hidden" id="simBanner">SIMULATION MODE &mdash; controls are simulated; no files are changed and nothing is submitted</div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">&#127919; jobbot<small>Control Tower</small></div>
+    <nav aria-label="Primary">
+      <button class="nav-btn active" data-view="overview" aria-current="page" >Overview</button>
+      <button class="nav-btn" data-view="workflows" >Jobs</button>
+      <button class="nav-btn" data-view="timeline" >Timeline</button>
+      <button class="nav-btn" data-view="agents" >Agents</button>
+      <button class="nav-btn" data-view="library" >CV Library</button>
+      <button class="nav-btn" data-view="interventions" >Interventions</button>
+      <div class="nav-group-label">Supporting</div>
+      <button class="nav-btn" data-view="docslib" >Documents library</button>
+      <button class="nav-btn" data-view="guardrails" >Guardrails / Safety</button>
+      <button class="nav-btn" data-view="console" >Live Console</button>
+    </nav>
+    <div class="side-foot">Reads disk live &middot; SSE push</div>
+  </aside>
+  <div class="content">
+    <header class="topbar">
+      <div>
+        <h1 id="viewTitle">Overview</h1>
+        <div class="sub">jobbot automation monitoring</div>
+      </div>
+      <div class="topbar-right">
+        <span id="healthBadge"></span>
+        <span class="live"><span class="pulse" id="pulse" aria-hidden="true"></span><span id="status" aria-live="polite">connecting&hellip;</span></span>
+        <span>updated <span id="ts">-</span></span>
+        <label title="Simulate actions without changing files"><input type="checkbox" id="simToggle"> Simulation</label>
+        <button class="btn" id="pauseBtn">Pause live</button>
+      </div>
+    </header>
+    <main id="main" tabindex="-1">
+      <!-- Overview -->
+      <section class="view active" id="view-overview">
+        <h2 class="section-title">System overview &mdash; health and attention</h2>
+        <div id="health"></div>
+        <div class="bento" id="healthkpis"></div>
+        <div class="sub-title">Activity summary</div>
+        <div class="bento" id="kpis"></div>
+        <div class="sub-title">Personas</div>
+        <div class="persona-list" id="personas"></div>
+        <details class="system-details" id="systemDetails">
+          <summary>System details</summary>
+          <div class="grid" id="global"></div>
+        </details>
+      </section>
+
+      <!-- Workflows -->
+      <section class="view" id="view-workflows">
+        <h2 class="section-title">Workflow monitoring &mdash; where is each execution?</h2>
+        <div class="bar">
+          <input id="fCompany" aria-label="Filter by company" placeholder="Filter company&hellip;">
+          <input id="fRole" aria-label="Filter by role" placeholder="Filter role&hellip;">
+           <input id="fDate" aria-label="Filter by date" placeholder="Filter date (YYYY-MM-DD)&hellip;">
+          <select id="fStage" aria-label="Filter by stage"><option value="">All stages</option></select>
+          <select id="fStatus" aria-label="Filter by status"><option value="">All status</option><option value="ok">ok</option><option value="warn">warn</option><option value="bad">bad</option></select>
+          <button class="btn" id="fClear">Clear</button>
+          <span class="bulk-count" id="filterCount"></span>
+        </div>
+        <div class="bar">
+          <span class="bulk-count" id="bulkCount">0 selected</span>
+          <button class="btn" id="bulkReview" disabled>Mark reviewed (selected)</button>
+          <button class="btn" id="bulkRerender" disabled>Force re-render (selected)</button>
+          <button class="btn" id="bulkClear" disabled>Clear selection</button>
+        </div>
+        <div class="hint">&#128073; Click a row to expand. Steps: research &middot; cv source &middot; cv rendered &middot; cover-letter source &middot; cover-letter rendered &middot; manifest &middot; reviewed &middot; applied.</div>
+        <div class="sub-title">Active processes</div>
+        <div class="table-wrap" role="region" aria-label="Active processes" tabindex="0">
+          <table>
+            <thead><tr><th>Company</th><th>Role</th><th>Current stage</th><th>Last activity</th></tr></thead>
+            <tbody id="active"></tbody>
+          </table>
+        </div>
+        <div class="sub-title">All workflows</div>
+        <div class="table-wrap" role="region" aria-label="All workflows" tabindex="0">
+          <table>
+            <thead><tr><th><input type="checkbox" id="selectAll" class="rowchk" aria-label="Select all workflows"></th><th>Folder</th><th>Company</th><th>Role</th><th>Status</th><th>Stage</th><th>Steps</th><th>Docs</th></tr></thead>
+            <tbody id="apps"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Agents -->
+      <section class="view" id="view-agents">
+        <h2 class="section-title">Agent monitor &mdash; what are the personas doing?</h2>
+        <div class="bar">
+          <input id="faPersona" aria-label="Filter persona" placeholder="Filter persona&hellip;">
+          <select id="faStatus" aria-label="Filter last status"><option value="">All status</option><option value="ok">ok</option><option value="warn">warn</option><option value="bad">bad</option><option value="muted">other</option></select>
+          <input id="faDate" aria-label="Filter last run date" placeholder="Filter last run (YYYY-MM-DD)&hellip;">
+          <button class="btn" id="faClear">Clear</button>
+          <span class="bulk-count" id="faCount"></span>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Agent summary" tabindex="0">
+          <table>
+            <thead><tr><th>Persona</th><th>Runs</th><th>Success</th><th>Failed</th><th>Avg duration</th><th>Last status</th><th>Last run</th></tr></thead>
+            <tbody id="agents"></tbody>
+          </table>
+        </div>
+        <div class="bar" style="margin-top:14px">
+          <label for="agentSelect">Inspect persona runs:</label>
+          <select id="agentSelect" aria-label="Select persona"></select>
+          <input id="farDate" aria-label="Filter run date" placeholder="Date (YYYY-MM-DD)&hellip;">
+          <input id="farTask" aria-label="Filter task" placeholder="Filter task&hellip;">
+          <select id="farStatus" aria-label="Filter run status"><option value="">All status</option><option value="done">done</option><option value="running">running</option><option value="failed">failed</option></select>
+          <button class="btn" id="farClear">Clear</button>
+          <span class="bulk-count" id="farCount"></span>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Selected persona runs" tabindex="0">
+          <table>
+            <thead><tr><th>Time</th><th>Task</th><th>Status</th><th>Duration</th><th>Outputs</th></tr></thead>
+            <tbody id="agentRuns"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Library -->
+      <section class="view" id="view-library">
+        <h2 class="section-title">CV library &mdash; role-targeted sources and PDFs</h2>
+        <div class="bar">
+          <input id="flRole" aria-label="Filter role" placeholder="Filter role&hellip;">
+          <select id="flSource" aria-label="Filter source"><option value="">Source: any</option><option value="yes">yes</option><option value="no">no</option></select>
+          <select id="flPdf" aria-label="Filter PDF"><option value="">PDF: any</option><option value="yes">yes</option><option value="no">no</option></select>
+          <input id="flDate" aria-label="Filter PDF updated date" placeholder="PDF updated (YYYY-MM-DD)&hellip;">
+          <button class="btn" id="flClear">Clear</button>
+          <span class="bulk-count" id="flCount"></span>
+        </div>
+        <div class="table-wrap" role="region" aria-label="CV library" tabindex="0">
+          <table>
+            <thead><tr><th>Role</th><th>Source</th><th>PDF</th><th>Words</th><th>PDF updated</th></tr></thead>
+            <tbody id="lib"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Interventions -->
+      <section class="view" id="view-interventions">
+        <h2 class="section-title">Exceptions &amp; intervention &mdash; what needs attention?</h2>
+        <div class="hint">Click a row to open the matching workflow detail.</div>
+        <div class="bar">
+          <input id="fiFolder" aria-label="Filter folder" placeholder="Filter folder&hellip;">
+          <input id="fiCompany" aria-label="Filter company" placeholder="Filter company&hellip;">
+          <input id="fiIssue" aria-label="Filter issue" placeholder="Filter issue&hellip;">
+          <input id="fiStage" aria-label="Filter stage" placeholder="Filter stage&hellip;">
+          <button class="btn" id="fiClear">Clear</button>
+          <span class="bulk-count" id="fiCount"></span>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Interventions" tabindex="0">
+          <table>
+            <thead><tr><th>Folder</th><th>Company</th><th>Issue</th><th>Stage</th></tr></thead>
+            <tbody id="interventions"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Timeline -->
+      <section class="view" id="view-timeline">
+        <h2 class="section-title">Timeline &mdash; events + live log</h2>
+        <div class="tabs" id="tlTabs" role="tablist" aria-label="Timeline filter">
+          <button class="tab active" data-tl="all" role="tab" aria-selected="true">All</button>
+          <button class="tab" data-tl="errors" role="tab" aria-selected="false">Errors</button>
+          <button class="tab" data-tl="agent" role="tab" aria-selected="false">Agent Runs</button>
+          <button class="tab" data-tl="system" role="tab" aria-selected="false">System Events</button>
+        </div>
+        <div class="bar">
+          <input id="ftDate" aria-label="Filter timeline date" placeholder="Date/time (YYYY-MM-DD)&hellip;">
+          <input id="ftLabel" aria-label="Filter label/type" placeholder="Filter type or label&hellip;">
+          <input id="ftDetail" aria-label="Filter detail" placeholder="Filter detail&hellip;">
+          <input id="ftStatus" aria-label="Filter status" placeholder="Filter status&hellip;">
+          <button class="btn" id="ftClear">Clear</button>
+          <span class="bulk-count" id="ftCount"></span>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Execution timeline" tabindex="0">
+          <table>
+            <thead><tr><th>Time</th><th>Type</th><th>Label</th><th>Detail</th><th>Status</th></tr></thead>
+            <tbody id="timeline"></tbody>
+          </table>
+        </div>
+        <div class="sub-title" style="margin-top:14px">Live agent log stream</div>
+        <div class="console" id="timelineConsole"></div>
+      </section>
+
+      <!-- Console -->
+      <section class="view" id="view-console">
+        <h2 class="section-title">Live agent log stream</h2>
+        <div class="bar">
+          <span class="bulk-count" id="consoleStatus">connecting&hellip;</span>
+          <button class="btn" id="consoleClear">Clear</button>
+          <label><input type="checkbox" id="consoleFollow" checked> Auto-scroll</label>
+          <span class="muted">Source: .memory/live.log</span>
+        </div>
+        <div class="console" id="console"></div>
+      </section>
+
+      <section class="view" id="view-docslib">
+        <h2 class="section-title">Documents library</h2>
+        <div class="sub-title">Master CV</div>
+        <div id="masterCvBlock"></div>
+        <div class="sub-title">Master Cover Letter</div>
+        <div id="masterClBlock"></div>
+        <div class="sub-title">Locked template status</div>
+        <div id="templateStatusBlock"></div>
+        <div class="sub-title">Render history</div>
+        <div class="bar">
+          <input id="frName" aria-label="Filter render name" placeholder="Filter name&hellip;">
+          <input id="frDate" aria-label="Filter render date" placeholder="Date (YYYY-MM-DD)&hellip;">
+          <input id="frFile" aria-label="Filter artifact" placeholder="Filter artifact/file&hellip;">
+          <button class="btn" id="frClear">Clear</button>
+          <span class="bulk-count" id="frCount"></span>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Render history" tabindex="0"><table><thead><tr><th>Name</th><th>Updated</th><th>Artifacts</th></tr></thead><tbody id="renderHistory"></tbody></table></div>
+        <div class="sub-title">CV library</div>
+        <div class="bar">
+          <input id="fdRole" aria-label="Filter role" placeholder="Filter role&hellip;">
+          <select id="fdSource" aria-label="Filter source"><option value="">Source: any</option><option value="yes">yes</option><option value="no">no</option></select>
+          <select id="fdPdf" aria-label="Filter PDF"><option value="">PDF: any</option><option value="yes">yes</option><option value="no">no</option></select>
+          <input id="fdDate" aria-label="Filter PDF updated date" placeholder="PDF updated (YYYY-MM-DD)&hellip;">
+          <button class="btn" id="fdClear">Clear</button>
+          <span class="bulk-count" id="fdCount"></span>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Documents CV library" tabindex="0"><table><thead><tr><th>Role</th><th>Source</th><th>PDF</th><th>Words</th><th>PDF updated</th></tr></thead><tbody id="docslibCv"></tbody></table></div>
+      </section>
+
+      <section class="view" id="view-guardrails">
+        <h2 class="section-title">Guardrails / Safety</h2>
+        <div class="grid" id="guardrailSummary"></div>
+        <div class="sub-title">Safety rules (read-only)</div>
+        <div class="bar">
+          <input id="fgId" aria-label="Filter rule id" placeholder="Filter id&hellip;">
+          <input id="fgRule" aria-label="Filter rule" placeholder="Filter rule&hellip;">
+          <input id="fgStatus" aria-label="Filter status" placeholder="Filter status&hellip;">
+          <button class="btn" id="fgClear">Clear</button>
+          <span class="bulk-count" id="fgCount"></span>
+        </div>
+        <div class="table-wrap" role="region" aria-label="Guardrail rules" tabindex="0"><table><thead><tr><th>ID</th><th>Rule</th><th>Status</th></tr></thead><tbody id="guardrailRules"></tbody></table></div>
+        <div class="sub-title">LinkedIn ToS acknowledgement</div>
+        <div id="tosAck" class="card"></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<dialog class="modal" id="modal" aria-labelledby="modalTitle" aria-describedby="modalText">
+  <div class="modal-box">
+    <h3 id="modalTitle">Confirm action</h3>
+    <p id="modalText"></p>
+    <div class="modal-actions">
+      <button class="btn" id="modalNo">Cancel</button>
+      <button class="btn danger" id="modalYes">Confirm</button>
+    </div>
+  </div>
+</dialog>
+<div id="toast" class="hidden" role="status" aria-live="polite"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
+
+
+

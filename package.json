@@ -1,0 +1,23 @@
+{
+  "name": "jobbot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=26 <27"
+  },
+  "bin": {
+    "jobbot": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "osv": "node tools/osv-gate.js",
+    "render": "node src/cli.js render",
+    "dashboard": "node tools/dashboard/index.js"
+  },
+  "dependencies": {
+    "docx": "9.15.3",
+    "jszip": "3.10.2",
+    "selenium-webdriver": "4.52.0"
+  }
+}

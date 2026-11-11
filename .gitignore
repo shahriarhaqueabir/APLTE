@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------------------
+# jobbot — never publish personal data
+# ---------------------------------------------------------------------------
+
+# Dependencies / toolchain (not needed to run from source)
+node_modules/
+bin/
+browser-profile/
+*.log
+
+# Personal documents — CVs, cover letters, application PDFs/DOCX/PNG exports
+CVs/
+cv-library/
+CV_LIBRARY.md
+
+# Project documentation is kept local (not published)
+docs/
+plans/
+
+# Local environment notes and agent instructions (machine-specific)
+AGENTS.md
+ENVIRONMENT-HARDENING.md
+environment.lock.json
+
+# Personal data (profile, answers, application log, audit trail, rendered output)
+data/profile.json
+data/answers.json
+data/audit.jsonl
+data/applied.jsonl
+data/scan.json
+data/pending-plan.json
+data/pending-scan.json
+data/out/
+
+# Agent memory — contains references to personal data
+.memory/
+
+# Credentials / secrets (defensive; none are currently in the repo)
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*.json
+cookies*.json

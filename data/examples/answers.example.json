@@ -1,0 +1,40 @@
+[
+  {
+    "id": "years-javascript",
+    "question": {
+      "en": "How many years of JavaScript experience do you have?",
+      "de": "Wie viele Jahre Erfahrung haben Sie mit JavaScript?"
+    },
+    "match": {
+      "all": ["javascript"],
+      "any": ["years", "experience", "jahre", "erfahrung"]
+    },
+    "answer": {
+      "en": "6",
+      "de": "6"
+    },
+    "source": "cv:Targeted/CV_Solutions_Engineer.pdf#experience",
+    "confidence": "high",
+    "sensitive": false,
+    "approvedAt": "2026-11-08T12:00:00.000Z"
+  },
+  {
+    "id": "salary-expectation",
+    "question": {
+      "en": "What are your salary expectations?",
+      "de": "Wie hoch sind Ihre Gehaltsvorstellungen?"
+    },
+    "match": {
+      "all": ["salary"],
+      "any": ["expectation", "expectations", "gehalt", "gehaltsvorstellung", "gehaltsvorstellungen"]
+    },
+    "answer": {
+      "en": "65000 EUR gross per year",
+      "de": "65.000 EUR brutto pro Jahr"
+    },
+    "source": "profile:salary_expectations",
+    "confidence": "medium",
+    "sensitive": true,
+    "approvedAt": "2026-11-08T12:00:00.000Z"
+  }
+]

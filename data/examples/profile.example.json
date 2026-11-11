@@ -1,0 +1,36 @@
+{
+  "personal_information": {
+    "first_name": "Ada",
+    "last_name": "Lovelace",
+    "email": "ada@example.com",
+    "phone": "+49 30 000000",
+    "city": "Berlin",
+    "country": "Germany",
+    "linkedin_url": "https://www.linkedin.com/in/example/"
+  },
+  "education_details": [],
+  "experience_details": [],
+  "projects": [],
+  "achievements": [],
+  "certifications": [],
+  "languages": [],
+  "interests": [],
+  "availability": {
+    "notice_period": "4 weeks",
+    "earliest_start": "2026-12-01"
+  },
+  "salary_expectations": {
+    "amount_eur": 65000,
+    "period": "year",
+    "gross": true
+  },
+  "self_identification": {},
+  "legal_authorization": {
+    "authorized_to_work_in_germany": true,
+    "requires_sponsorship": false
+  },
+  "work_preferences": {
+    "remote": "hybrid",
+    "relocation": false
+  }
+}

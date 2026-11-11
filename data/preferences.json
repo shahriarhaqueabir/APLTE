@@ -1,0 +1,53 @@
+{
+  "follow_company": false,
+  "mark_as_top_choice": false,
+
+  "cover_letter": "always",
+  "reuse_cover_letter": false,
+
+  "cover_letter_policy": {
+    "generate_new_per_job": true,
+    "tailor_to_actual_job_description": true,
+    "match_posting_language": true,
+    "formats": ["pdf", "docx"],
+    "upload_method": "manual_user_upload",
+    "never_reuse_previous": true
+  },
+
+  "resume_policy": {
+    "source_cv_immutable": true,
+    "generate_tailored_cv_per_job": true,
+    "formats": ["pdf", "docx"],
+    "upload_method": "manual_user_upload",
+    "default_resume_is_fallback_only": true
+  },
+
+  "auto_skip_top_choice_page": false,
+
+  "preparation": {
+    "mandatory_before_application": true,
+    "require_job_description": true,
+    "require_company_research": true,
+    "require_master_cv_review": true,
+    "require_tailored_cv": true,
+    "require_tailored_cover_letter": true,
+    "require_manifest": true,
+    "require_document_validation": true,
+    "require_user_review": true,
+    "block_application_if_incomplete": true
+  },
+
+  "application": {
+    "state_driven": true,
+    "never_assume_page_numbers": true,
+    "never_assume_button_positions": true,
+    "never_interact_with_file_inputs": true,
+    "never_submit": true,
+    "submit_is_hard_boundary": true,
+    "verify_success_before_recording": true,
+    "fill_only_recognised_fields": true,
+    "verify_readback_after_fill": true,
+    "scan_before_fill": true,
+    "applied_jsonl_is_source_of_truth": true
+  }
+}
