@@ -41,7 +41,7 @@
   var STEP_KEYS = ['research', 'cvSource', 'cvRendered', 'clSource', 'clRendered', 'manifest', 'userReviewed', 'applied'];
   var SIM_ACTIONS = ['retry-run', 'skip-stage'];
   var ACTION_LABEL = { 'mark-reviewed': 'Mark reviewed', 'mark-master-cv-reviewed': 'Mark master CV reviewed', 'mark-applied': 'Mark applied', 'force-rerender': 'Force re-render', 'retry-run': 'Retry run', 'skip-stage': 'Skip stage' };
-  var TITLES = { overview: 'Overview', workflows: 'Jobs', agents: 'Agents', library: 'CV Library', interventions: 'Interventions', timeline: 'Timeline', console: 'Live Console', docslib: 'Documents library', guardrails: 'Guardrails / Safety' };
+  var TITLES = { overview: 'Overview', workflows: 'Jobs', agents: 'Agents', interventions: 'Action Items', timeline: 'Timeline', console: 'Live Console', browser: 'Browser Agent', docslib: 'Documents library', guardrails: 'Guardrails / Safety' };
 
   var storedFilters = load('filters', {}) || {};
   // Migrate legacy flat filter state to nested structure
@@ -55,7 +55,6 @@
       status: storedFilters.status || '',
       agents: { persona: '', status: '', date: '' },
       agentRuns: { date: '', task: '', status: '' },
-      library: { role: '', source: '', pdf: '', date: '' },
       interventions: { folder: '', company: '', issue: '', stage: '' },
       timeline: { date: '', label: '', detail: '', status: '' },
       renderHistory: { name: '', date: '', file: '' },
@@ -81,7 +80,6 @@
       status: storedFilters.status || '',
       agents: (storedFilters.agents && typeof storedFilters.agents === 'object') ? storedFilters.agents : {persona:'',status:'',date:''},
       agentRuns: (storedFilters.agentRuns && typeof storedFilters.agentRuns === 'object') ? storedFilters.agentRuns : {date:'',task:'',status:''},
-      library: (storedFilters.library && typeof storedFilters.library === 'object') ? storedFilters.library : {role:'',source:'',pdf:'',date:''},
       interventions: (storedFilters.interventions && typeof storedFilters.interventions === 'object') ? storedFilters.interventions : {folder:'',company:'',issue:'',stage:''},
       timeline: (storedFilters.timeline && typeof storedFilters.timeline === 'object') ? storedFilters.timeline : {date:'',label:'',detail:'',status:''},
       renderHistory: (storedFilters.renderHistory && typeof storedFilters.renderHistory === 'object') ? storedFilters.renderHistory : {name:'',date:'',file:''},
@@ -221,7 +219,10 @@
 
   function appRowHtml(a) {
     var s = a.steps || {};
+    var doneCount = STEP_KEYS.filter(function (k) { return s[k]; }).length;
+    var pct = Math.round((doneCount / STEP_KEYS.length) * 100);
     var steps = STEP_KEYS.map(function (k) { return '<span class="step ' + (s[k] ? 'done' : '') + '" title="' + k + '"></span>'; }).join('');
+    var progressBar = '<div style="display:flex;align-items:center;gap:4px;"><div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.08);overflow:hidden;"><div style="width:' + pct + '%;height:100%;border-radius:3px;background:linear-gradient(90deg,#00b4d8,#00ff88);transition:width .3s;"></div></div><span style="font-size:12px;color:var(--muted);min-width:28px;text-align:right;">' + pct + '%</span></div>';
     var h = appHealth(a);
     var checked = state.selected.has(a.folder) ? ' checked' : '';
     var expanded = state.expanded.has(a.folder);
@@ -231,7 +232,7 @@
       + '<td>' + esc(a.company) + '</td><td>' + esc(a.role) + '</td>'
       + '<td><span class="badge ' + h + '">' + esc(appHealthLabel(a)) + '</span> <span class="badge muted">' + esc(a.status) + '</span></td>'
       + '<td><span class="badge ' + stageClass(a.stage) + '">' + esc(a.stageLabel) + '</span></td>'
-      + '<td>' + steps + '</td><td>' + a.docs + '</td>';
+      + '<td>' + progressBar + '</td><td>' + a.docs + '</td>';
   }
 
   function artifactCards(a) {
@@ -283,6 +284,12 @@
       + '<div class="row"><b>stage</b><span class="badge ' + stageClass(a.stage) + '">' + esc(a.stageLabel) + '</span><b>status</b>' + esc(a.status) + '</div>'
       + '<div class="row"><b>issues</b>' + issues + '</div>'
       + '<div class="row"><b>master CV review</b><span class="badge ' + (a.masterCvReviewed ? 'ok' : 'warn') + '">' + (a.masterCvReviewed ? 'acknowledged' : 'pending') + '</span></div>'
+      + '<div class="sub-title">Preparation gate</div>'
+      + '<div class="row"><span class="badge ' + ((a.steps && a.steps.research) ? 'ok' : 'muted') + '">' + ((a.steps && a.steps.research) ? '\u2713' : '\u25CB') + '</span> Job description &amp; research</div>'
+      + '<div class="row"><span class="badge ' + (a.masterCvReviewed ? 'ok' : 'muted') + '">' + (a.masterCvReviewed ? '\u2713' : '\u25CB') + '</span> Master CV reviewed</div>'
+      + '<div class="row"><span class="badge ' + ((a.steps && a.steps.cvRendered) ? 'ok' : 'muted') + '">' + ((a.steps && a.steps.cvRendered) ? '\u2713' : '\u25CB') + '</span> Tailored CV rendered</div>'
+      + '<div class="row"><span class="badge ' + ((a.steps && a.steps.clRendered) ? 'ok' : 'muted') + '">' + ((a.steps && a.steps.clRendered) ? '\u2713' : '\u25CB') + '</span> Tailored cover letter rendered</div>'
+      + '<div class="row"><span class="badge ' + ((a.steps && a.steps.userReviewed) ? 'ok' : 'muted') + '">' + ((a.steps && a.steps.userReviewed) ? '\u2713' : '\u25CB') + '</span> User reviewed documents</div>'
       + (a.researchCompanyPath || a.researchJobPath ? '<div class="row"><b>research</b>'
         + (a.researchCompanyPath ? '<a class="btn" href="/file?path=' + encodeURIComponent(a.researchCompanyPath) + '" target="_blank">Company research</a> ' : '')
         + (a.researchJobPath ? '<a class="btn" href="/file?path=' + encodeURIComponent(a.researchJobPath) + '" target="_blank">Job description</a>' : '')
@@ -325,6 +332,44 @@
     $('bulkClear').disabled = n === 0;
   }
 
+  function computeNextAction(d) {
+    var apps = d.applications || [];
+    if (!apps.length) return 'No applications yet. Use "jobbot intake <url>" to create one.';
+    var pending = apps.filter(function (a) { return !(a.steps && a.steps.applied); });
+    if (!pending.length) return 'All applications are complete. Great work!';
+    var best = null, bestScore = -1;
+    pending.forEach(function (a) {
+      var s = a.steps || {};
+      var done = STEP_KEYS.filter(function (k) { return s[k]; }).length;
+      var score = done;
+      if (a.issues && a.issues.length) score += 0.5;
+      if (!a.masterCvReviewed) score += 0.3;
+      if (score > bestScore) { bestScore = score; best = a; }
+    });
+    if (!best) return 'No action needed.';
+    var s = best.steps || {};
+    var missing = STEP_KEYS.filter(function (k) { return !s[k]; });
+    var nextStep = missing.length ? missing[0] : 'review';
+    var stepLabels = { research: 'research', cvSource: 'CV source', cvRendered: 'render CV', clSource: 'cover letter source', clRendered: 'render cover letter', manifest: 'manifest', userReviewed: 'user review', applied: 'applied' };
+    var gate = [];
+    if (!best.masterCvReviewed) gate.push('master CV review');
+    if (best.issues && best.issues.length) gate.push(best.issues[0]);
+    var msg = best.company + ' - ' + best.role + ': next step is ' + (stepLabels[nextStep] || nextStep);
+    if (gate.length) msg += ' (gate: ' + gate.join(', ') + ')';
+    return msg;
+  }
+
+  function renderBrowser() {
+    var d = state.data; if (!d) return;
+    var fields = (d.scan && d.scan.fields) || [];
+    var rows = fields.map(function (f) {
+      return '<tr><td>' + esc(f.label || f.name || '-') + '</td><td>' + esc(f.value || '-') + '</td>'
+        + '<td><span class="badge ' + (f.confidence === 'high' ? 'ok' : f.confidence === 'medium' ? 'warn' : 'muted') + '">' + esc(f.confidence || '-') + '</span></td>'
+        + '<td><span class="badge muted">' + esc(f.status || 'pending') + '</span></td></tr>';
+    }).join('');
+    if ($('browserFields')) $('browserFields').innerHTML = rows || '<tr><td colspan="4" class="muted">No scan data. Run "jobbot scan" first.</td></tr>';
+  }
+
   function renderWorkflows() {
     var d = state.data; if (!d) return;
     renderActive(d);
@@ -348,6 +393,8 @@
     patchRows($('apps'), items);
     syncCheckboxes();
     $('filterCount').textContent = apps.length + ' / ' + (d.applications || []).length + ' shown';
+    var nextAct = computeNextAction(d);
+    if ($('nextActionText')) $('nextActionText').textContent = nextAct;
   }
 
   function agentRowHtml(a) {
@@ -432,14 +479,6 @@
       if (!dateHas(c.pdfMtime, f.date)) return false;
       return true;
     });
-  }
-
-  function renderLibrary() {
-    var d = state.data; if (!d) return;
-    var all = d.cvLibrary || [];
-    var filtered = filteredCvLibrary(all, state.filters.library);
-    patchRows($('lib'), cvLibRows(filtered));
-    if ($('flCount')) $('flCount').textContent = filtered.length + ' / ' + all.length + ' shown';
   }
 
   function renderInterventions() {
@@ -579,9 +618,9 @@
     renderOverview(d);
     renderWorkflows();
     renderAgents();
-    renderLibrary();
     renderInterventions();
     renderTimeline();
+    renderBrowser();
     renderDocslib();
     renderGuardrails();
   }
@@ -652,18 +691,17 @@
   // ---------- console ----------
   var MAX_LINES = 500;
   function appendLogs(lines) {
-    [$('console'), $('timelineConsole')].forEach(function (c) {
-      if (!c) return;
-      var follow = $('consoleFollow') ? $('consoleFollow').checked : true;
-      lines.forEach(function (line) {
-        var d = document.createElement('div');
-        d.className = 'ln' + (/error|fail|exception|traceback/i.test(line) ? ' err' : /^: |\[sys\]/i.test(line) ? ' sys' : '');
-        d.textContent = line;
-        c.appendChild(d);
-      });
-      while (c.children.length > MAX_LINES) c.removeChild(c.firstChild);
-      if (follow) c.scrollTop = c.scrollHeight;
+    var c = $('console');
+    if (!c) return;
+    var follow = $('consoleFollow') ? $('consoleFollow').checked : true;
+    lines.forEach(function (line) {
+      var d = document.createElement('div');
+      d.className = 'ln' + (/error|fail|exception|traceback/i.test(line) ? ' err' : /^: |\[sys\]/i.test(line) ? ' sys' : '');
+      d.textContent = line;
+      c.appendChild(d);
     });
+    while (c.children.length > MAX_LINES) c.removeChild(c.firstChild);
+    if (follow) c.scrollTop = c.scrollHeight;
   }
 
   var simTimer = null, simN = 0;
@@ -691,8 +729,8 @@
     if (v === 'workflows') renderWorkflows();
     if (v === 'timeline') renderTimeline();
     if (v === 'agents') renderAgents();
-    if (v === 'library') renderLibrary();
     if (v === 'interventions') renderInterventions();
+    if (v === 'browser') renderBrowser();
     if (v === 'docslib') renderDocslib();
     if (v === 'guardrails') renderGuardrails();
     if (v === 'console' && state.prefs.simulate) startSim();
@@ -780,13 +818,6 @@
     bindFilter('farStatus', function(){ state.filters.agentRuns.status = $('farStatus').value; }, renderAgentRuns);
     bindClear('farClear', function(){ state.filters.agentRuns = {date:'',task:'',status:''}; if($('farDate')) $('farDate').value=''; if($('farTask')) $('farTask').value=''; if($('farStatus')) $('farStatus').value=''; }, renderAgentRuns);
 
-    // library
-    bindFilter('flRole', function(){ state.filters.library.role = $('flRole').value; }, renderLibrary);
-    bindFilter('flSource', function(){ state.filters.library.source = $('flSource').value; }, renderLibrary);
-    bindFilter('flPdf', function(){ state.filters.library.pdf = $('flPdf').value; }, renderLibrary);
-    bindFilter('flDate', function(){ state.filters.library.date = $('flDate').value; }, renderLibrary);
-    bindClear('flClear', function(){ state.filters.library = {role:'',source:'',pdf:'',date:''}; ['flRole','flSource','flPdf','flDate'].forEach(function(id){ if($(id)) $(id).value=''; }); }, renderLibrary);
-
     // interventions
     if ($('interventions')) $('interventions').addEventListener('click', function (e) {
       var link = e.target.closest('button[data-open-workflow]'); if (!link) return;
@@ -852,7 +883,7 @@
     });
 
     // console controls
-    if ($('consoleClear')) $('consoleClear').addEventListener('click', function () { [$('console'), $('timelineConsole')].filter(Boolean).forEach(function (c) { c.innerHTML = ''; }); });
+    if ($('consoleClear')) $('consoleClear').addEventListener('click', function () { var c = $('console'); if (c) c.innerHTML = ''; });
   }
 
   function toggleDetail(folder) {
@@ -921,7 +952,7 @@
     var sets = [
       ['agents',['persona','status','date'],['faPersona','faStatus','faDate']],
       ['agentRuns',['date','task','status'],['farDate','farTask','farStatus']],
-      ['library',['role','source','pdf','date'],['flRole','flSource','flPdf','flDate']],
+      ['interventions',['folder','company','issue','stage'],['fiFolder','fiCompany','fiIssue','fiStage']],
       ['interventions',['folder','company','issue','stage'],['fiFolder','fiCompany','fiIssue','fiStage']],
       ['timeline',['date','label','detail','status'],['ftDate','ftLabel','ftDetail','ftStatus']],
       ['renderHistory',['name','date','file'],['frName','frDate','frFile']],

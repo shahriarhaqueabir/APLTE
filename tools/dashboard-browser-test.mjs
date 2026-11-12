@@ -36,7 +36,7 @@ try {
   check(true, 'SSE status is live');
 
   // 2. sidebar navigation + fixed top bar exist
-  for (const view of ['overview', 'workflows', 'agents', 'library', 'interventions', 'timeline', 'console']) {
+  for (const view of ['overview', 'workflows', 'agents', 'interventions', 'timeline', 'console', 'browser']) {
     const n = await driver.findElements(By.css(`.nav-btn[data-view="${view}"]`));
     check(n.length === 1, `sidebar nav present: ${view}`);
   }

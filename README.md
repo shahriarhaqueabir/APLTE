@@ -80,9 +80,7 @@ npm ci
 
 ## Layout standard
 
-CV and cover-letter templates are frozen (Arial 9.5pt / 10.5pt, 1.4 line
-height, 15mm / 0.79in margins, black text only, bullet glyph U+25CF, A4).
-Content lives only in plain Markdown data files.
+CV and cover-letter templates use locked style tokens (Arial 9.5pt / 10.5pt, 1.4 line height, 15mm / 0.79in margins, black text only, bullet glyph U+25CF, A4) that can be updated with user approval. Content lives only in plain Markdown data files.
 
 ## License
 

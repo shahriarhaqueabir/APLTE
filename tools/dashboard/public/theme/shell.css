@@ -40,8 +40,9 @@ header {
 .brand { justify-self: start; display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 15px; white-space: nowrap; }
 .brand .logo {
   width: 34px; height: 34px; border-radius: 9px; flex: none;
-  background: linear-gradient(135deg, var(--accent), var(--purple));
+  background: linear-gradient(135deg, var(--blue), var(--green));
   display: grid; place-items: center; color: #fff; font-weight: 700;
+  box-shadow: var(--glow-blue);
 }
 .brand small { color: var(--muted); font-weight: 500; }
 .header-right { justify-self: end; display: flex; align-items: center; gap: 14px; }
@@ -84,3 +85,68 @@ main { flex: 1; min-height: 0; overflow: auto; }
 /* a horizontal toolbar (title left, actions right) */
 .toolbar { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-4); }
 .toolbar .spacer { flex: 1; }
+/* �� Cyber-candy bento box styling �� */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+}
+
+.bento-card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
+  overflow: hidden;
+  transition: transform .2s var(--ease-standard), box-shadow .2s var(--ease-standard);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-2), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.bento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-3), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.bento-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.bento-card.blue::before { background: var(--grad-blue); box-shadow: var(--glow-blue); }
+.bento-card.orange::before { background: var(--grad-orange); box-shadow: var(--glow-orange); }
+.bento-card.green::before { background: var(--grad-green); box-shadow: var(--glow-green); }
+
+.bento-card.blue { border-color: rgba(0, 180, 216, 0.2); }
+.bento-card.orange { border-color: rgba(255, 107, 53, 0.2); }
+.bento-card.green { border-color: rgba(0, 255, 136, 0.2); }
+
+.bento-card.blue:hover { box-shadow: var(--shadow-3), var(--glow-blue); }
+.bento-card.orange:hover { box-shadow: var(--shadow-3), var(--glow-orange); }
+.bento-card.green:hover { box-shadow: var(--shadow-3), var(--glow-green); }
+
+/* Reflection effect */
+.bento-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 40%);
+  pointer-events: none;
+  border-radius: var(--radius-lg);
+}
+
+/* Status badges with candy colors */
+.badge-blue { background: rgba(0, 180, 216, 0.15); color: #00d4ff; border: 1px solid rgba(0, 180, 216, 0.3); }
+.badge-orange { background: rgba(255, 107, 53, 0.15); color: #ff9f1c; border: 1px solid rgba(255, 107, 53, 0.3); }
+.badge-green { background: rgba(0, 255, 136, 0.15); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.3); }
+
+/* Accessibility: status indicators with patterns, not just color */
+.badge.ok::before { content: '\2713 '; }
+.badge.warn::before { content: '\26A0 '; }
+.badge.bad::before { content: '\2717 '; }
+.badge.muted::before { content: '\2014 '; }
+

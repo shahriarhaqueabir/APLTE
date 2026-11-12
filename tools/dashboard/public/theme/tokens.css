@@ -31,16 +31,17 @@
 /* ═══ Tier 1 — PRIMITIVE palette (mode-independent) ═════════════════════════ */
 :root {
   /* accent ramp */
-  --pd-ref-accent-400: #6facfa;
-  --pd-ref-accent-500: #4f9cf9;
-  --pd-ref-accent-600: #3b82f6;
+  --pd-ref-accent-400: #00d4ff;
+  --pd-ref-accent-500: #00b4d8;
+  --pd-ref-accent-600: #0096c7;
 
   /* status hues */
-  --pd-ref-red-500:    #f85149;
-  --pd-ref-green-500:  #3fb950;
-  --pd-ref-amber-500:  #d29922;
-  --pd-ref-teal-500:   #2dd4bf;
-  --pd-ref-purple-500: #a98bff;
+  --pd-ref-red-500:    #ff4d6d;
+  --pd-ref-green-500:  #00ff88;
+  --pd-ref-amber-500:  #ff9f1c;
+  --pd-ref-teal-500:   #00f5d4;
+  --pd-ref-orange-500: #ff6b35;
+  --pd-ref-blue-500:   #00b4d8;
 }
 
 /* ═══ Tier 2 — SEMANTIC (dark = default) ═══════════════════════════════════ */
@@ -64,13 +65,23 @@
   --accent: var(--pd-ref-accent-500);
   --accent-hover: var(--pd-ref-accent-400);
   --accent-active: var(--pd-ref-accent-600);
-  --accent-ink: #07101f;     /* readable text on an --accent fill */
+  --accent-ink: #001a2c;
   --green: var(--pd-ref-green-500);
   --amber: var(--pd-ref-amber-500);
   --red: var(--pd-ref-red-500);
   --teal: var(--pd-ref-teal-500);
-  --purple: var(--pd-ref-purple-500);
+  --orange: var(--pd-ref-orange-500);
+  --blue: var(--pd-ref-blue-500);
   --danger: var(--red);
+
+  /* gradient + glow tokens for cyber-candy bento */
+  --grad-blue: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
+  --grad-orange: linear-gradient(135deg, #ff6b35 0%, #ff9f1c 100%);
+  --grad-green: linear-gradient(135deg, #00ff88 0%, #00c853 100%);
+  --grad-cyan: linear-gradient(135deg, #00f5d4 0%, #00b4d8 100%);
+  --glow-blue: 0 0 20px rgba(0, 180, 216, 0.3), 0 0 40px rgba(0, 180, 216, 0.1);
+  --glow-orange: 0 0 20px rgba(255, 107, 53, 0.3), 0 0 40px rgba(255, 107, 53, 0.1);
+  --glow-green: 0 0 20px rgba(0, 255, 136, 0.3), 0 0 40px rgba(0, 255, 136, 0.1);
 
   /* status "soft" backgrounds + borders — tint the hue, stay theme-agnostic
    * via color-mix so the same token reads correctly in light and dark. */
