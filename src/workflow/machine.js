@@ -76,6 +76,44 @@ export function advance(manifest, now = new Date().toISOString()) {
   return manifest;
 }
 
+// Hash-bound review: a draft is "reviewed" only when the recorded hashes match
+// the current draft files. Editing a draft invalidates the review.
+export function reviewedHashesMatch(manifest) {
+  const app = (manifest && manifest.application) || {};
+  const recorded = app.reviewedHashes;
+  if (!recorded || typeof recorded !== 'object') return false;
+  const docs = Array.isArray(manifest.drafts) ? manifest.drafts : [];
+  const canon = (k) => String(k || '').replace(/\\\\/g, '/').split('/').pop() || String(k);
+  const current = {};
+  for (const d of docs) current[canon(d.path || d.name)] = d.hash;
+  const rec = {};
+  for (const [k, v] of Object.entries(recorded)) rec[canon(k)] = v;
+  for (const key of Object.keys(rec)) {
+    if (rec[key] !== current[key]) return false;
+  }
+  for (const key of Object.keys(current)) {
+    if (!(key in rec)) return false;
+  }
+  return Object.keys(current).length > 0;
+}
+
+export function markReviewed(manifest, hashes, now = new Date().toISOString()) {
+  if (!manifest.application) manifest.application = {};
+  manifest.application.reviewedHashes = hashes || null;
+  manifest.application.reviewedAt = hashes ? now : null;
+  if (manifest.workflow) manifest.workflow.updatedAt = now;
+  return manifest;
+}
+
+export function clearReviewed(manifest, now = new Date().toISOString()) {
+  if (manifest.application) {
+    manifest.application.reviewedHashes = null;
+    manifest.application.reviewedAt = null;
+  }
+  if (manifest.workflow) manifest.workflow.updatedAt = now;
+  return manifest;
+}
+
 // Mark the current step done (e.g., apply completed).
 export function complete(manifest, now = new Date().toISOString()) {
   if (!manifest.workflow) manifest.workflow = defaultWorkflow();

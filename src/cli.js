@@ -62,7 +62,12 @@ async function main() {
       const { findChrome: fc, preflight } = await import('./browser/driver.js');
       try { preflight({ chromePath: fc() }); } catch (e) { console.error(e.message); process.exitCode = 1; break; }
       const chromePath = fc();
-      const profileDir = join(ROOT, 'browser-profile');
+      // Ephemeral profile per run: no persisted cookies/storage between sessions.
+      // Re-login every time is intentional (safer, no cross-run leakage).
+      const profileFlagIdx = args.indexOf('--profile');
+      const profileDir = (profileFlagIdx >= 0 && args[profileFlagIdx + 1])
+        ? args[profileFlagIdx + 1]
+        : join(process.env.TEMP || process.env.TMPDIR || '/tmp', `jobbot-browser-${process.pid}-${Date.now()}`);
       const result = await launchBrowser({ chromePath, profileDir, port: 9222 });
       console.log(JSON.stringify(result, null, 2));
       console.log('Chrome launched. Log into LinkedIn in that window.');
@@ -204,7 +209,8 @@ async function main() {
 
         // 1. Daily cap check
         const auditPath = join(DATA, 'audit.jsonl');
-        assertUnderCap(auditPath);
+        const { resolveDailyCap } = await import('./fill/cap.js');
+        assertUnderCap(auditPath, { cap: resolveDailyCap() });
 
         // 2. Plan freshness
         assertPlanFresh(plan);

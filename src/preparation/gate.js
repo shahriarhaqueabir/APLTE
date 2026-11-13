@@ -68,9 +68,17 @@ export function resolveManifestPath(outDir, explicitPath) {
     .filter((d) => d.isDirectory())
     .map((d) => join(outDir, d.name, 'manifest.json'))
     .filter((p) => existsSync(p))
-    .sort()
-    .reverse();
-  return found[0] || null;
+    .map((p) => {
+      let ts = 0;
+      try {
+        const m = JSON.parse(readFileSync(p, 'utf8'));
+        ts = Date.parse(m.updatedAt || m.createdAt || '') || 0;
+      } catch { ts = statSync(p).mtimeMs; }
+      if (!ts) { try { ts = statSync(p).mtimeMs; } catch { ts = 0; } }
+      return { p, ts };
+    })
+    .sort((a, b) => b.ts - a.ts || b.p.localeCompare(a.p));
+  return found[0]?.p || null;
 }
 
 /**

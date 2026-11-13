@@ -1,0 +1,9 @@
+# gitleaks configuration for jobbot
+title = "jobbot gitleaks config"
+
+[allowlist]
+  description = "Allow example data and test fixtures"
+  paths = [
+    '''data/examples/.*''',
+    '''test/.*''',
+  ]

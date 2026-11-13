@@ -1,6 +1,25 @@
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 export const DAILY_CAP = 10;
+
+/**
+ * Resolve the user-configurable daily application cap.
+ * Precedence: JOBBOT_DAILY_CAP env → data/preferences.json → DAILY_CAP default.
+ */
+export function resolveDailyCap() {
+  const env = process.env.JOBBOT_DAILY_CAP;
+  if (env) {
+    const n = Number(env);
+    if (Number.isFinite(n) && n > 0) return Math.floor(n);
+  }
+  try {
+    const prefs = JSON.parse(readFileSync(join(process.cwd(), 'data', 'preferences.json'), 'utf8'));
+    const n = Number(prefs && prefs.daily_cap);
+    if (Number.isFinite(n) && n > 0) return Math.floor(n);
+  } catch { /* fall through */ }
+  return DAILY_CAP;
+}
 
 export class CapError extends Error {
   constructor(used, cap) {

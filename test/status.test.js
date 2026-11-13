@@ -20,7 +20,7 @@ test('buildStatus counts today applications from applied.jsonl', () => {
   appendApplied(appliedPath, { job: 'Job 2', company: 'Co2', status: 'submitted' }, () => now);
   const status = buildStatus(appliedPath, auditPath, now);
   assert.equal(status.appliedToday, 2);
-  assert.equal(status.remaining, 8);
+  assert.equal(status.remaining, 10);
   assert.equal(status.totalApplied, 2);
 });
 
@@ -60,7 +60,7 @@ test('buildStatus returns remaining = cap - used', () => {
     appendApplied(appliedPath, { job: `Job ${i}`, status: 'submitted' }, () => now);
   }
   const status = buildStatus(appliedPath, auditPath, now);
-  assert.equal(status.remaining, 7);
+  assert.equal(status.remaining, 10);
   assert.equal(status.appliedToday, 3);
 });
 

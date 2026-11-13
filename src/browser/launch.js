@@ -62,11 +62,16 @@ export async function waitForDevTools(port = DEFAULT_PORT, timeoutMs = 20_000) {
 }
 
 export async function launchBrowser({ chromePath, profileDir, port = DEFAULT_PORT }) {
+  // If DevTools is already up on the port, reuse it instead of spawning a second Chrome.
+  try {
+    const existing = await waitForDevTools(port, 1500);
+    return { pid: null, port, browser: existing.Browser, reused: true };
+  } catch { /* not running; proceed to launch */ }
   mkdirSync(profileDir, { recursive: true });
   const args = launchArgs({ profileDir, port });
   assertSafeArgs(args);
   const child = spawn(chromePath, args, { detached: true, stdio: 'ignore' });
   child.unref();
   const version = await waitForDevTools(port);
-  return { pid: child.pid, port, browser: version.Browser };
+  return { pid: child.pid, port, browser: version.Browser, reused: false };
 }

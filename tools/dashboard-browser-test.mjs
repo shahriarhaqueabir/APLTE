@@ -36,7 +36,7 @@ try {
   check(true, 'SSE status is live');
 
   // 2. sidebar navigation + fixed top bar exist
-  for (const view of ['overview', 'workflows', 'agents', 'interventions', 'timeline', 'console', 'browser']) {
+  for (const view of ['overview', 'workflows', 'agents', 'interventions', 'timeline', 'console']) {
     const n = await driver.findElements(By.css(`.nav-btn[data-view="${view}"]`));
     check(n.length === 1, `sidebar nav present: ${view}`);
   }
@@ -53,9 +53,9 @@ try {
   const systemDetails = await driver.findElement(By.id('systemDetails'));
   check(!(await systemDetails.getAttribute('open')), 'system details are collapsed initially');
   check((await driver.findElement(By.css('#view-overview .section-title')).getText()).includes('health and attention'), 'Overview leads with system health');
-  await driver.findElement(By.css('#systemDetails summary')).click();
+  var _ss = await driver.findElement(By.css('#systemDetails summary')); await driver.executeScript('arguments[0].scrollIntoView({block:"center"}); arguments[0].click();', _ss); await sleep(200);
   check(await driver.findElement(By.id('global')).isDisplayed(), 'system telemetry remains available in details');
-  await driver.findElement(By.css('#systemDetails summary')).click();
+  var _ss = await driver.findElement(By.css('#systemDetails summary')); await driver.executeScript('arguments[0].scrollIntoView({block:"center"}); arguments[0].click();', _ss); await sleep(200);
 
   // 4. workflows view: filters, bulk, table
   await showView('workflows');
@@ -103,11 +103,15 @@ try {
   const open = await driver.findElements(By.css('#apps tr.detail.open'));
   check(open.length === 1, `row expands to detail: ${open.length}`);
   check((await expander.getAttribute('aria-expanded')) === 'true', 'workflow expansion state is announced');
-  const cards = await driver.findElements(By.css('#apps tr.detail.open .acard'));
-  check(cards.length > 0, `artifact cards render: ${cards.length}`);
-  const masterCvAction = await driver.findElements(By.css('#apps tr.detail.open button[data-act="mark-master-cv-reviewed"]'));
+  const cards = await driver.findElements(By.css('#apps tr.detail.open .doc-row'));
+  check(cards.length > 0, `document rows render: ${cards.length}`);
+  const moreSummary = await driver.findElements(By.css('#apps tr.detail.open .more-actions summary'));
+  if (moreSummary.length) await moreSummary[0].click();
+  await sleep(200);
+  const masterCvAction = await driver.findElements(By.css('#apps tr.detail.open .actions button[data-act="mark-master-cv-reviewed"]'));
   check(masterCvAction.length === 1, 'master CV review action is distinct');
-  await masterCvAction[0].click();
+  await driver.executeScript('arguments[0].scrollIntoView({block:"center"}); arguments[0].focus(); arguments[0].click();', masterCvAction[0]);
+  await sleep(200);
   const dialog = await driver.findElement(By.id('modal'));
   check(await dialog.getAttribute('aria-labelledby') === 'modalTitle', 'confirmation dialog has an accessible title');
   check(await driver.executeScript("return document.getElementById('modal').open;"), 'master CV review asks for confirmation');
@@ -125,13 +129,14 @@ try {
       return window.__fetch(url, options);
     };
   `);
-  await masterCvAction[0].click();
+  await driver.executeScript('arguments[0].scrollIntoView({block:"center"}); arguments[0].focus(); arguments[0].click();', masterCvAction[0]);
+  await sleep(200);
   await driver.findElement(By.id('modalYes')).click();
   await driver.wait(async () => (await driver.findElement(By.id('toast')).getText()).includes('Audit log failed'), 3000);
   const auditToast = await driver.findElement(By.id('toast')).getText();
   check(auditToast.includes('disk unavailable') && auditToast.includes('Check workflow state'), 'audit failure warns against a blind retry');
   await driver.executeScript('window.fetch = window.__fetch;');
-  const copyBtns = await driver.findElements(By.css('#apps tr.detail.open .acard-actions [data-copy]'));
+  const copyBtns = await driver.findElements(By.css('#apps tr.detail.open .doc-actions [data-copy]'));
   check(copyBtns.length > 0, `copy-path buttons render: ${copyBtns.length}`);
 
   // 8. hash badges still render across the dataset
@@ -139,7 +144,7 @@ try {
   await sleep(500);
   const allOpen = await driver.findElements(By.css('#apps tr.detail.open'));
   check(allOpen.length === rows.length, `all details expanded: ${allOpen.length}/${rows.length}`);
-  const badges = await driver.findElements(By.css('#apps tr.detail.open .acard .badge'));
+  const badges = await driver.findElements(By.css('#apps tr.detail.open .doc-row .badge, #apps tr.detail.open .doc-group-head .badge'));
   let foundVerified = false, foundMismatch = false;
   for (const b of badges) {
     const t = await b.getText();
@@ -158,25 +163,19 @@ try {
   const afterReload = await driver.findElements(By.css('#apps tr.detail.open'));
   check(afterReload.length === beforeReload.length, `expanded rows persist after reload: ${afterReload.length}/${beforeReload.length}`);
 
-  // 10. agents view + persisted selected agent
+  // 10. agents view + expandable agent cards
   await showView('agents');
   await sleep(300);
-  const agentRows = await driver.findElements(By.css('#agents tr.clickable'));
-  check(agentRows.length > 0, `clickable agent rows: ${agentRows.length}`);
-  if (agentRows.length) {
-    const agentButton = await driver.findElement(By.css('#agents button[data-agent-select]'));
-    await agentButton.sendKeys(Key.ENTER);
-    await sleep(300);
-    const selected = await driver.executeScript("return document.getElementById('agentSelect').value;");
-    check(!!selected, `agent selected after click: ${selected}`);
-    const runRows = await driver.findElements(By.css('#agentRuns tr'));
-    check(runRows.length > 0, `agent run history rows: ${runRows.length}`);
-    await driver.navigate().refresh();
-    await driver.wait(until.elementLocated(By.id('status')), 10000);
-    await showView('agents');
-    await sleep(600);
-    const restored = await driver.executeScript("return document.getElementById('agentSelect').value;");
-    check(restored === selected, `selected agent persists after reload: ${restored}`);
+  const agentCards = await driver.findElements(By.css('#agents .agent-card'));
+  check(agentCards.length >= 7, `agent cards render: ${agentCards.length}`);
+  const pipelineDots = await driver.findElements(By.css('.agent-pipe-dot'));
+  check(pipelineDots.length >= 7, `pipeline dots render: ${pipelineDots.length}`);
+  if (agentCards.length) {
+    await agentCards[0].click();
+    await sleep(200);
+    const opened = await driver.findElements(By.css('#agents .agent-card.open'));
+    check(opened.length >= 1, `agent card expands: ${opened.length}`);
+    await agentCards[0].click();
   }
 
   // 11. timeline tabs + relative timestamps
@@ -241,7 +240,7 @@ try {
     const q = (s) => document.querySelector(s);
     const realRows = (s) => q(s) ? q(s).querySelectorAll('tr:not([data-key="__empty"])').length : -1;
     return {
-      rules: realRows('#guardrailRules'),
+      rules: q('#guardrailRules') ? q('#guardrailRules').querySelectorAll('.gr-row').length : -1,
       summary: q('#guardrailSummary') ? q('#guardrailSummary').children.length : -1,
       tos: q('#tosAck') ? q('#tosAck').textContent.trim().length : 0
     };

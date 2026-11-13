@@ -65,6 +65,7 @@ const CHROME_CANDIDATES = [
 
 function findChrome() {
   const fs = require2('node:fs');
+  if (process.env.JOBBOT_CHROME && fs.existsSync(process.env.JOBBOT_CHROME)) return process.env.JOBBOT_CHROME;
   for (const p of CHROME_CANDIDATES) {
     if (fs.existsSync(p)) return p;
   }
@@ -102,22 +103,47 @@ function buildHtml(mdText, lang, title, styleType) {
   let inList = false;
   let inPara = false;
   let inSection = false;
+  let headerRegion = true; // header = everything before the first ## section
+  const contactRows = [];
 
   function closePara() { if (inPara) { html += '</p>\n'; inPara = false; } }
   function closeList() { if (inList) { html += '</ul>\n'; inList = false; } }
   function closeSection() { if (inSection) { html += '</section>\n'; inSection = false; } }
+  function flushContactRows() {
+    if (!contactRows.length) return;
+    closePara(); closeList();
+    html += '<div class="contact-grid">\n';
+    for (const row of contactRows) {
+      html += `<div class="contact-row"><span class="contact-label">${inlineFormat(row.label)}</span><span class="contact-value">${inlineFormat(row.value)}</span></div>\n`;
+    }
+    html += '</div>\n';
+    contactRows.length = 0;
+  }
+
+  // "Label: value" rows in the CV header block, rendered as an aligned grid.
+  const HEADER_ROW = /^([A-Z][A-Za-z ]{1,24}:)\s+(\S.*)$/;
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
+    const headerRow = styleType === 'cv' && headerRegion ? line.match(HEADER_ROW) : null;
+    if (!headerRow) flushContactRows();
     if (line === '') { closePara(); closeList(); continue; }
     // Skip Markdown thematic breaks (---, ***, ___) — they are layout, not content.
     if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) { closePara(); closeList(); continue; }
+
+    // Header contact row ("Email: ...", "LinkedIn: ...") — grouped into .contact-grid.
+    if (headerRow) {
+      closePara(); closeList();
+      contactRows.push({ label: headerRow[1], value: headerRow[2] });
+      continue;
+    }
 
     // Heading: # ## ###
     const hMatch = line.match(/^(#{1,3})\s+(.+)$/);
     if (hMatch) {
       closePara(); closeList(); closeSection();
       const level = hMatch[1].length;
+      if (level >= 2) headerRegion = false;
       const text = inlineFormat(hMatch[2]);
       if (level === 1) {
         html += `<header class="cv-header"><h1>${text}</h1></header>\n`;
@@ -162,6 +188,7 @@ function buildHtml(mdText, lang, title, styleType) {
     else { html += ' '; }
     html += inlineFormat(line);
   }
+  flushContactRows();
   closePara(); closeList(); closeSection();
 
   const css = cssForDoc(styleType || 'letter');
@@ -191,7 +218,7 @@ export async function renderLetter(markdownText, outputDir, options = {}) {
   writeFileSync(htmlPath, html, 'utf8');
 
   const chromePath = findChrome();
-  const profileDir = join(process.env.TEMP || '/tmp', 'jobbot-render-profile');
+  const profileDir = join(process.env.TEMP || '/tmp', `jobbot-render-profile-${process.pid}-${Date.now()}`);
   mkdirSync(profileDir, { recursive: true });
   const fileUrl = pathToFileURL(htmlPath).href;
   execFileSync(chromePath, [
@@ -222,11 +249,13 @@ export async function renderLetter(markdownText, outputDir, options = {}) {
     }
   }
 
+  let writtenDocxPath = null;
   if (docxLib) {
     await renderDocx(markdownText, docxPath, styleType);
+    writtenDocxPath = docxPath;
   }
 
-  return { mdPath, htmlPath, pdfPath, docxPath, verifyImages };
+  return { mdPath, htmlPath, pdfPath, docxPath: writtenDocxPath, verifyImages };
 }
 
 async function renderDocx(markdownText, docxPath, styleType) {
@@ -235,14 +264,18 @@ async function renderDocx(markdownText, docxPath, styleType) {
   const lines = markdownText.split(/\r?\n/);
   const paragraphs = [];
   let current = '';
+  let headerRegion = styleType === 'cv';
+  const flush = () => { if (current.trim()) { paragraphs.push(current.trim()); current = ''; } };
+  const HEADER_ROW = /^([A-Z][A-Za-z ]{1,24}:)\s+(\S.*)$/;
   for (const line of lines) {
-    if (line.trim() === '') {
-      if (current.trim()) { paragraphs.push(current.trim()); current = ''; }
-    } else {
-      current += (current ? ' ' : '') + line.trim().replace(/^#+\s*/, '');
-    }
+    const t = line.trim();
+    if (t === '') { flush(); continue; }
+    if (/^##\s+/.test(t)) headerRegion = false;
+    const row = headerRegion ? t.match(HEADER_ROW) : null;
+    if (row) { flush(); paragraphs.push({ label: row[1], value: row[2] }); continue; }
+    current += (current ? ' ' : '') + t.replace(/^#+\s*/, '');
   }
-  if (current.trim()) paragraphs.push(current.trim());
+  flush();
 
   function runsFor(text) {
     const unescaped = String(text).replace(/\\(.)/g, '$1');
@@ -255,6 +288,14 @@ async function renderDocx(markdownText, docxPath, styleType) {
   }
 
   const children = paragraphs.map((p) => {
+    if (typeof p !== 'string') {
+      return new Paragraph({
+        children: [
+          new TextRun({ text: `${p.label} `, bold: true, font: 'Calibri', size: 24 }),
+          new TextRun({ text: p.value, font: 'Calibri', size: 24 }),
+        ],
+      });
+    }
     const isBullet = p.startsWith('• ') || p.startsWith('- ') || p.startsWith('* ');
     const text = isBullet ? p.replace(/^[•\-*]\s*/, '') : p;
     if (isBullet) {

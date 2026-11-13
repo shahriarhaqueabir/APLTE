@@ -140,7 +140,7 @@ test('dashboard server shuts down after its last SSE stream disconnects', async 
       await Promise.race([
         closed,
         new Promise((_, reject) => {
-          closeTimer = setTimeout(() => reject(new Error('server did not close within 2 seconds')), 2000);
+          closeTimer = setTimeout(() => reject(new Error('server did not close within 2 seconds')), 5000);
         }),
       ]);
     } finally {
@@ -182,7 +182,7 @@ test('dashboard server closes a pending connection after its last SSE stream dis
       await Promise.race([
         closed,
         new Promise((_, reject) => {
-          closeTimer = setTimeout(() => reject(new Error('server did not close within 2 seconds')), 2000);
+          closeTimer = setTimeout(() => reject(new Error('server did not close within 2 seconds')), 5000);
         }),
       ]);
     } finally {

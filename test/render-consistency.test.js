@@ -98,3 +98,49 @@ test('rendered PDF, DOCX and MD contain the same text (CV style)', async () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('CV header label rows render as an aligned contact grid, not space padding', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'jobbot-render-header-'));
+  try {
+    const md = [
+      '# Jane Doe',
+      '',
+      '**Solutions Consultant**',
+      '',
+      'Email: jane@example.com',
+      'LinkedIn: www.linkedin.com/in/janedoe',
+      'GitHub: www.github.com/janedoe',
+      'Website: jane.example.com',
+      'Work permit: Permanent residence',
+      '',
+      '## PROFESSIONAL PROFILE',
+      '',
+      'Profile text.',
+      '',
+      '## CORE COMPETENCIES',
+      '',
+      '**Consulting:** discovery.',
+      '',
+      'Note: this line is outside the header and must not be gridded.',
+    ].join('\n');
+
+    const result = await renderLetter(md, dir, { lang: 'en', title: 'CV', styleType: 'cv' });
+    const html = readFileSync(result.htmlPath, 'utf8');
+
+    assert.match(html, /class="contact-grid"/, 'header rows must be grouped into a contact grid');
+    assert.equal((html.match(/class="contact-label"/g) || []).length, 5, 'five header labels expected');
+    assert.match(html, /<span class="contact-label">Email:<\/span><span class="contact-value">jane@example\.com<\/span>/);
+    assert.match(html, /<span class="contact-label">Work permit:<\/span>/);
+    assert.doesNotMatch(html, /Note:\s{2,}/, 'alignment must never come from repeated spaces');
+
+    // The grid stops at the first ## section: a later "Label: value" line stays a normal paragraph.
+    const afterSections = html.slice(html.indexOf('CORE COMPETENCIES'));
+    assert.doesNotMatch(afterSections, /class="contact-label"/, 'labels outside the header must not be gridded');
+
+    const docxText = await extractDocxText(result.docxPath);
+    assert.match(docxText, /Email: jane@example\.com/, 'DOCX keeps label and value on one paragraph');
+    assert.match(docxText, /Work permit: Permanent residence/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

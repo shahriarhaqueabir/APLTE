@@ -350,6 +350,8 @@ export function startServer(port, options = {}) {
       shutdownTimer = setTimeout(() => {
         shutdownTimer = null;
         if (activeSseResponses === 0 && server.listening) {
+          try { for (const sk of __sockets) { try { sk.destroy(); } catch {} } } catch {}
+          try { server.closeAllConnections?.(); } catch {}
           server.close((error) => {
             if (error) console.error('Failed to close dashboard server:', error.message);
           });
@@ -359,6 +361,8 @@ export function startServer(port, options = {}) {
     });
   }
 
+  const __sockets = new Set();
+  server.on('connection', (sock) => { __sockets.add(sock); sock.on('close', () => __sockets.delete(sock)); });
   server.on('close', () => {
     if (shutdownTimer) { clearTimeout(shutdownTimer); shutdownTimer = null; }
     dataStream.close();
@@ -371,5 +375,8 @@ export function startServer(port, options = {}) {
   });
   return server;
 }
+
+
+
 
 

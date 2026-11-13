@@ -84,6 +84,11 @@ export function cssForDoc(type = 'letter') {
   .contact { list-style: none; padding: 0; margin: 0; font-size: 9.5pt; color: ${DESIGN.color.muted}; line-height: ${s.lineHeight}; }
   .contact li { margin: 0 0 0.5mm; }
   .contact li.wide { width: auto; }
+  /* Header contact block: "Label: value" rows aligned by CSS grid, never by space padding. */
+  .contact-grid { display: grid; grid-template-columns: max-content 1fr; column-gap: 1.1em; row-gap: 0.3mm; margin: 0 0 ${s.paragraphSpacing}pt; font-size: ${s.fontSize}pt; line-height: ${s.lineHeight}; color: ${color}; }
+  .contact-grid .contact-row { display: contents; }
+  .contact-grid .contact-label { font-weight: 600; white-space: nowrap; }
+  .contact-grid .contact-value { overflow-wrap: anywhere; }
   .entry { margin-bottom: 3mm; break-inside: avoid; page-break-inside: avoid; }
   .entry-title { font-weight: 700; margin: 0 0 1mm; break-after: avoid; page-break-after: avoid; }
   .entry-title .d { font-weight: 400; }

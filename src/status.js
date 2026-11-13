@@ -2,7 +2,7 @@
 // Status reporting: daily cap usage, recent applications, audit summary.
 
 import { readApplied } from './log/applied.js';
-import { readAudit, countApplicationsOn, localDateKey, DAILY_CAP } from './fill/cap.js';
+import { readAudit, countApplicationsOn, localDateKey, DAILY_CAP, resolveDailyCap } from './fill/cap.js';
 
 /**
  * Build a status report.
@@ -12,7 +12,7 @@ import { readAudit, countApplicationsOn, localDateKey, DAILY_CAP } from './fill/
  * @param {Date} [now]
  * @returns {object}
  */
-export function buildStatus(appliedPath, auditPath, now = new Date()) {
+export function buildStatus(appliedPath, auditPath, now = new Date(), cap = resolveDailyCap()) {
   const applied = readApplied(appliedPath);
   const audit = readAudit(auditPath);
 
@@ -26,10 +26,10 @@ export function buildStatus(appliedPath, auditPath, now = new Date()) {
 
   return {
     date: today,
-    dailyCap: DAILY_CAP,
+    dailyCap: cap,
     appliedToday: todayApplied.length,
     auditToday: todayAuditCount,
-    remaining: Math.max(0, DAILY_CAP - todayApplied.length),
+    remaining: Math.max(0, cap - todayAuditCount),
     totalApplied: applied.length,
     recentApplications: recent.map((a) => ({
       date: (a.ts || '').slice(0, 10),

@@ -4,6 +4,7 @@
 
 import { By, until } from 'selenium-webdriver';
 import { assertNoChallenge } from '../scan/challenge.js';
+import { appendLiveLog } from '../util/live-log.js';
 
 const EASY_APPLY_SELECTORS = [
   'button[aria-label*="Easy Apply"]',
@@ -33,7 +34,9 @@ export async function openEasyApply(driver, options = {}) {
 
   // Check for challenge before acting
   const preText = await driver.executeScript('return document.body.innerText || "";');
-  assertNoChallenge({ text: preText, foundSelectors: await findChallengeSelectors(driver) });
+  const preFound = await findChallengeSelectors(driver);
+  try { assertNoChallenge({ text: preText, foundSelectors: preFound }); }
+  catch (e) { appendLiveLog('[OPEN] ERROR challenge detected before click: ' + (e && e.message)); throw e; }
 
   // Find Easy Apply button
   let btn = null;
@@ -49,8 +52,8 @@ export async function openEasyApply(driver, options = {}) {
       if (/easy apply/i.test(t)) { btn = b; break; }
     }
   }
-  if (!btn) throw new Error('No Easy Apply button found on this page.');
-
+  if (!btn) { appendLiveLog('[OPEN] ERROR no Easy Apply button found'); throw new Error('No Easy Apply button found on this page.'); }
+  appendLiveLog('[OPEN] clicking Easy Apply button');
   // Click via JS (avoids overlay interception)
   await driver.executeScript('arguments[0].click();', btn);
 
@@ -63,6 +66,7 @@ export async function openEasyApply(driver, options = {}) {
   const foundSelectors = await findChallengeSelectors(driver);
   const challenge = assertNoChallenge({ text: postText, foundSelectors });
 
+  appendLiveLog('[OPEN] modal opened; challenge=' + (challenge && challenge.detected ? 'DETECTED' : 'none'));
   return { opened: true, challenge: challenge };
 }
 

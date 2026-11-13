@@ -16,6 +16,9 @@ export const CHROME_CANDIDATES = [
 ];
 
 export function findChrome(candidates = CHROME_CANDIDATES) {
+  if (process.env.JOBBOT_CHROME && existsSync(process.env.JOBBOT_CHROME)) {
+    return process.env.JOBBOT_CHROME;
+  }
   const found = candidates.find((p) => p && existsSync(p));
   if (!found) {
     throw new Error('Chrome not found. Set JOBBOT_CHROME to the chrome.exe path.');

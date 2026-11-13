@@ -140,7 +140,7 @@ function extractInPage() {
 
   // Text-like inputs
   const textInputs = Array.from(dialog.querySelectorAll('input[type="text"], input[type="tel"], input[type="email"], input[type="url"], input[type="number"], input[type="date"], input:not([type])'))
-    .filter((el) => el.type !== 'radio' && el.type !== 'checkbox');
+    .filter((el) => el.type !== 'radio' && el.type !== 'checkbox' && el.type !== 'file' && el.type !== 'hidden' && el.type !== 'submit' && el.type !== 'button');
   for (const el of textInputs) {
     const label = findLabel(el);
     fields.push({

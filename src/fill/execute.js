@@ -3,6 +3,7 @@
 // Safety: refuses file inputs and submit buttons; honours page-hash and TTL gates.
 
 import { assertFillable, assertAdvanceAllowed, assertPlanFresh, assertPageUnchanged } from './guard.js';
+import { appendLiveLog } from '../util/live-log.js';
 
 const FILL_IN_PAGE = function (label, value) {
   const dialog = document.querySelector('dialog, [role="dialog"], .artdeco-modal, .jobs-easy-apply-content');
@@ -182,37 +183,54 @@ const FILL_IN_PAGE = function (label, value) {
  * @returns {Promise<{ filled: Array<{field, value, readback, how}>, nextClicked: boolean }>}
  */
 export async function fillPage(driver, plan, currentSnapshot, now = Date.now()) {
-  assertPlanFresh(plan, now);
-  // Normalise: accept either a full scan snapshot or a bare fields array
-  const snapshot = Array.isArray(currentSnapshot)
-    ? { fields: currentSnapshot }
-    : (currentSnapshot || {});
-  assertPageUnchanged(plan, snapshot);
+  try {
+    assertPlanFresh(plan, now);
+    // Normalise: accept either a full scan snapshot or a bare fields array
+    const snapshot = Array.isArray(currentSnapshot)
+      ? { fields: currentSnapshot }
+      : (currentSnapshot || {});
+    assertPageUnchanged(plan, snapshot);
 
-  const filled = [];
-  for (const action of (plan.fills || [])) {
-    const field = action.field;
-    assertFillable(field);
-    const result = await driver.executeScript(FILL_IN_PAGE, field.label, action.value);
-    if (!result || !result.ok) {
-      throw new Error(`Fill failed for "${field.label}": ${result && result.error ? result.error : 'unknown'}${result && result.available ? ' (available: ' + result.available.join(', ') + ')' : ''}`);
-    }
-    // Verify readback for text/select
-    if (result.how === 'text' || result.how === 'select') {
-      if (result.how === 'text' && result.readback !== action.value) {
-        // Soft check: some fields normalize (e.g. date picker). Log but don't throw.
-        // eslint-disable-next-line no-console
-        console.warn(`[execute] readback mismatch for "${field.label}": expected "${action.value}", got "${result.readback}"`);
+    appendLiveLog(`[FILL] start: ${plan.title || '?'} page ${plan.stage || '?'} fields=${(plan.fills || []).length}`);
+
+    const filled = [];
+    for (const action of (plan.fills || [])) {
+      const field = action.field;
+      assertFillable(field);
+      const result = await driver.executeScript(FILL_IN_PAGE, field.label, action.value);
+      if (!result || !result.ok) {
+        const msg = `Fill failed for "${field.label}": ${result && result.error ? result.error : 'unknown'}${result && result.available ? ' (available: ' + result.available.join(', ') + ')' : ''}`;
+        appendLiveLog(`[FILL] ERROR ${msg}`);
+        throw new Error(msg);
       }
+      // Verify readback for text/select
+      if (result.how === 'text' || result.how === 'select') {
+        if (result.how === 'text' && result.readback !== action.value) {
+        const isDate = field && field.type === 'date';
+        if (isDate) {
+          console.warn(`[execute] readback mismatch for "${field.label}": expected "${action.value}", got "${result.readback}"`);
+          appendLiveLog(`[FILL] WARN readback mismatch "${field.label}": expected "${action.value}", got "${result.readback}"`);
+        } else {
+          const msg = `Readback mismatch for "${field.label}": expected "${action.value}", got "${result.readback}"`;
+          appendLiveLog(`[FILL] ERROR ${msg}`);
+          throw new Error(msg);
+        }
+      }
+      }
+      appendLiveLog(`[FILL] ${field.label} => "${action.value}" (${result.how})`);
+      filled.push({ field: field, value: action.value, readback: result.readback, how: result.how });
     }
-    filled.push({ field: field, value: action.value, readback: result.readback, how: result.how });
-  }
 
-  // Click the advance button (Next/Continue/Review) — never Submit.
-  // The caller provides the button label via plan.advanceButton (default 'Next').
-  const advanceLabel = (plan.advanceButton || 'Next').trim();
-  const clicked = await clickAdvance(driver, advanceLabel);
-  return { filled: filled, nextClicked: clicked };
+    // Click the advance button (Next/Continue/Review) — never Submit.
+    // The caller provides the button label via plan.advanceButton (default 'Next').
+    const advanceLabel = (plan.advanceButton || 'Next').trim();
+    const clicked = await clickAdvance(driver, advanceLabel);
+    appendLiveLog(`[FILL] advance clicked: ${advanceLabel} ok=${clicked}`);
+    return { filled: filled, nextClicked: clicked };
+  } catch (err) {
+    appendLiveLog(`[FILL] FAILED: ${err && err.message ? err.message : err}`);
+    throw err;
+  }
 }
 
 async function clickAdvance(driver, label) {
@@ -224,8 +242,15 @@ async function clickAdvance(driver, label) {
     if (!target) return { ok: false, error: 'button-not-found', available: buttons.map((b) => (b.innerText || '').trim()) };
     // Guard: refuse terminal buttons
     const t = (target.innerText || '').trim();
-    const terminal = /\bsubmit\b/i.test(t) || /\bsend application\b/i.test(t) || /^send$/i.test(t) || /application sent/i.test(t) || /bewerbung absenden/i.test(t) || /^absenden$/i.test(t) || /bewerbung einreichen/i.test(t) || /jetzt bewerben/i.test(t) || /abschicken/i.test(t);
+    const terminal = /\bsubmit\b/i.test(t) || /\bsend application\b/i.test(t) || /^send$/i.test(t) ||
+      /application sent/i.test(t) || /bewerbung absenden/i.test(t) || /^absenden$/i.test(t) ||
+      /bewerbung senden/i.test(t) || /bewerbung einreichen/i.test(t) || /jetzt bewerben/i.test(t) ||
+      /abschicken/i.test(t) || /application einreichen/i.test(t);
     if (terminal) return { ok: false, error: 'terminal-button', label: t };
+    const advance = /^next$/i.test(t) || /^continue$/i.test(t) || /^continue to next step$/i.test(t) ||
+      /^review$/i.test(t) || /^review application$/i.test(t) || /^weiter$/i.test(t) ||
+      /^fortfahren$/i.test(t) || /^ueberpruefen$/i.test(t) || /^überprüfen$/i.test(t);
+    if (!advance) return { ok: false, error: 'not-advance-button', label: t };
     target.click();
     return { ok: true, label: t };
   }, label);

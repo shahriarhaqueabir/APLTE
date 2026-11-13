@@ -4,8 +4,10 @@
 // and the research files. Returns { ok, failures[], warnings[] }.
 
 import { existsSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 function sha256(s) { return createHash('sha256').update(String(s), 'utf8').digest('hex'); }
 function readJson(p) { try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return null; } }
@@ -24,7 +26,7 @@ function personalTerms() {
     phrases.push(phrase);
     for (const part of phrase.split(/\s+/)) if (part.length > 2) tokens.add(part);
   };
-  const profile = readJson(join(process.cwd(), 'data', 'profile.json'));
+  const profile = readJson(join(ROOT, 'data', 'profile.json'));
   const info = profile?.personal_information || {};
   addPhrase([info.first_name, info.last_name].filter(Boolean).join(' '));
   addPhrase(info.city);
@@ -35,6 +37,32 @@ function personalTerms() {
   return { phrases: phrases.map(p => p.toLowerCase()), tokens };
 }
 
+// Canonical CV section order (see AGENTS.md and personas/cv-writer.md).
+// SELECTED PROJECTS is the only optional section, so this validates the
+// relative order of whatever sections are present rather than requiring all.
+export const CV_SECTION_ORDER = [
+  'PROFESSIONAL PROFILE',
+  'CORE COMPETENCIES',
+  'TECHNICAL SKILLS',
+  'PROFESSIONAL EXPERIENCE',
+  'EDUCATION',
+  'CERTIFICATIONS',
+  'SELECTED PROJECTS',
+  'LANGUAGES',
+];
+
+function sectionHeadings(md) {
+  return [...md.matchAll(/^##\s+(.+?)\s*$/gm)].map((m) => m[1].toUpperCase());
+}
+
+function inCanonicalOrder(md) {
+  const present = sectionHeadings(md).filter((h) => CV_SECTION_ORDER.includes(h));
+  for (let i = 1; i < present.length; i++) {
+    if (CV_SECTION_ORDER.indexOf(present[i]) < CV_SECTION_ORDER.indexOf(present[i - 1])) return false;
+  }
+  return true;
+}
+
 const CV_STRUCTURE = [
   { name: 'no_yaml_front_matter', test: (md) => !(md.trimStart().startsWith('---\n') || md.trimStart().startsWith('---\r\n')) },
   { name: 'no_thematic_break_divider', test: (md) => !/^\s*---\s*$/m.test(md) },
@@ -42,6 +70,7 @@ const CV_STRUCTURE = [
   { name: 'no_space_padded_alignment', test: (md) => !/ {3,}\S/.test(md) && !/\t/.test(md) },
   { name: 'has_h1_title', test: (md) => /^#\s+.+/m.test(md) },
   { name: 'has_sections', test: (md) => (md.match(/^##\s+/gm) || []).length >= 3 },
+  { name: 'section_order', test: (md) => inCanonicalOrder(md) },
 ];
 
 const CL_STRUCTURE = [
@@ -137,7 +166,7 @@ export function checkDocs(folder) {
     cl: join(root, 'source', 'cover-letter.md'),
     jd: join(root, 'research', 'job-description.md'),
     cr: join(root, 'research', 'company-research.md'),
-    sections: join(process.cwd(), 'data', 'cv-sections.json'),
+    sections: join(ROOT, 'data', 'cv-sections.json'),
   };
 
   for (const [k, p] of Object.entries(files)) {
@@ -175,7 +204,7 @@ export function checkDocs(folder) {
     const sec = readJson(files.sections);
     sourceText = sec?.flatText || '';
   } else {
-    const mc = join(process.cwd(), 'CVs', 'MASTER_CV.md');
+    const mc = join(ROOT, 'CVs', 'MASTER_CV.md');
     if (existsSync(mc)) sourceText = readFileSync(mc, 'utf8');
   }
 

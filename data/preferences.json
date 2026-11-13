@@ -1,4 +1,6 @@
 {
+  "daily_cap": 10,
+
   "follow_company": false,
   "mark_as_top_choice": false,
 

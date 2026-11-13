@@ -76,7 +76,7 @@ export function buildPlan(scanResult, answers, options = {}) {
 
     // Determine automation policy based on confidence
     let automationPolicy = 'fill-and-verify';
-    if (confidence >= 100) automationPolicy = 'fill-automatically';
+    if (confidence >= 99) automationPolicy = 'fill-automatically';
     else if (confidence >= 90) automationPolicy = 'fill-and-verify';
     else if (confidence >= 70) automationPolicy = 'ask-ai';
     else automationPolicy = 'ask-user';
