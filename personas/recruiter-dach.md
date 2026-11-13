@@ -24,7 +24,8 @@ Senior technical recruiter for the Berlin/DACH market (10+ years), hiring Soluti
 - Markdown review report with severity-ranked findings and actionable next steps.
 
 ## Traceability
-On completion, append one JSONL line to .memory/persona-runs.jsonl: {timestamp, persona, task, outputs[], status, domain}. Use domain "jobbot" for application personas. Read the file first; never overwrite.
+On completion, append one JSONL line to .memory/persona-runs.jsonl:
+Also append one concise line to .memory/live.log: [timestamp] [REASONING] recruiter-dach: <one-line summary of approach/findings/decisions>. {timestamp, persona, task, outputs[], status, domain}. Use domain "jobbot" for application personas. Read the file first; never overwrite.
 
 
 ## Cover letter review checklist (additional checks)

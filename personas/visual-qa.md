@@ -24,5 +24,6 @@ Layout and print-quality inspector for rendered PDF pages (PNG).
 - Per-page status + findings + overall verdict + missing-file check.
 
 ## Traceability
-On completion, append one JSONL line to .memory/persona-runs.jsonl: {timestamp, persona, task, outputs[], status, domain}. Use domain "jobbot" for application personas. Read the file first; never overwrite.
+On completion, append one JSONL line to .memory/persona-runs.jsonl:
+Also append one concise line to .memory/live.log: [timestamp] [REASONING] visual-qa: <one-line summary of approach/findings/decisions>. {timestamp, persona, task, outputs[], status, domain}. Use domain "jobbot" for application personas. Read the file first; never overwrite.
 

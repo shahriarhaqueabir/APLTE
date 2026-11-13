@@ -31,5 +31,6 @@ Independent verifier that audits research and application documents for factual 
 - Audit report in markdown with a claims table and a summary of risks.
 
 ## Traceability
-On completion, append one JSONL line to .memory/persona-runs.jsonl: {timestamp, persona, task, outputs[], status, domain}. Use domain "jobbot" for application personas. Read the file first; never overwrite.
+On completion, append one JSONL line to .memory/persona-runs.jsonl:
+Also append one concise line to .memory/live.log: [timestamp] [REASONING] fact-checker: <one-line summary of approach/findings/decisions>. {timestamp, persona, task, outputs[], status, domain}. Use domain "jobbot" for application personas. Read the file first; never overwrite.
 

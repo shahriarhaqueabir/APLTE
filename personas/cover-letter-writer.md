@@ -29,7 +29,8 @@ Professional cover-letter writer for the German/DACH market, specialized in tech
 - Word count and placeholder checklist.
 
 ## Traceability
-On completion, append one JSONL line to .memory/persona-runs.jsonl: {timestamp, persona, task, outputs[], status, domain}. Use domain "jobbot" for application personas. Read the file first; never overwrite.
+On completion, append one JSONL line to .memory/persona-runs.jsonl:
+Also append one concise line to .memory/live.log: [timestamp] [REASONING] cover-letter-writer: <one-line summary of approach/findings/decisions>. {timestamp, persona, task, outputs[], status, domain}. Use domain "jobbot" for application personas. Read the file first; never overwrite.
 
 
 ## Opening rule (Value-First)

@@ -29,5 +29,6 @@ Senior CV writer for the German/DACH market, specialized in technical roles (Sol
 - Short report: word count, sections included, trimming decisions, risks.
 
 ## Traceability
-On completion, append one JSONL line to .memory/persona-runs.jsonl: {timestamp, persona, task, outputs[], status, domain}. Use domain "jobbot" for application personas. Read the file first; never overwrite.
+On completion, append one JSONL line to .memory/persona-runs.jsonl:
+Also append one concise line to .memory/live.log: [timestamp] [REASONING] cv-writer: <one-line summary of approach/findings/decisions>. {timestamp, persona, task, outputs[], status, domain}. Use domain "jobbot" for application personas. Read the file first; never overwrite.
 
