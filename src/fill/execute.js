@@ -4,6 +4,7 @@
 
 import { assertFillable, assertAdvanceAllowed, assertPlanFresh, assertPageUnchanged } from './guard.js';
 import { appendLiveLog } from '../util/live-log.js';
+import { appendBrowserEvent } from '../util/browser-events.js';
 
 const FILL_IN_PAGE = function (label, value) {
   const dialog = document.querySelector('dialog, [role="dialog"], .artdeco-modal, .jobs-easy-apply-content');
@@ -192,6 +193,7 @@ export async function fillPage(driver, plan, currentSnapshot, now = Date.now()) 
     assertPageUnchanged(plan, snapshot);
 
     appendLiveLog(`[FILL] start: ${plan.title || '?'} page ${plan.stage || '?'} fields=${(plan.fills || []).length}`);
+    appendBrowserEvent({ type: 'fill-start', title: plan.title || null, stage: plan.stage || null, fieldCount: (plan.fills || []).length });
 
     const filled = [];
     for (const action of (plan.fills || [])) {
@@ -201,6 +203,7 @@ export async function fillPage(driver, plan, currentSnapshot, now = Date.now()) 
       if (!result || !result.ok) {
         const msg = `Fill failed for "${field.label}": ${result && result.error ? result.error : 'unknown'}${result && result.available ? ' (available: ' + result.available.join(', ') + ')' : ''}`;
         appendLiveLog(`[FILL] ERROR ${msg}`);
+        appendBrowserEvent({ type: 'field-error', label: field.label, error: (result && result.error) || 'unknown' });
         throw new Error(msg);
       }
       // Verify readback for text/select
@@ -213,11 +216,13 @@ export async function fillPage(driver, plan, currentSnapshot, now = Date.now()) 
         } else {
           const msg = `Readback mismatch for "${field.label}": expected "${action.value}", got "${result.readback}"`;
           appendLiveLog(`[FILL] ERROR ${msg}`);
+          appendBrowserEvent({ type: 'field-error', label: field.label, error: 'readback-mismatch', expected: action.value, actual: result.readback });
           throw new Error(msg);
         }
       }
       }
       appendLiveLog(`[FILL] ${field.label} => "${action.value}" (${result.how})`);
+      appendBrowserEvent({ type: 'field-filled', label: field.label, value: action.value, how: result.how, readback: result.readback, confidence: action.confidence ?? null });
       filled.push({ field: field, value: action.value, readback: result.readback, how: result.how });
     }
 
@@ -226,9 +231,11 @@ export async function fillPage(driver, plan, currentSnapshot, now = Date.now()) 
     const advanceLabel = (plan.advanceButton || 'Next').trim();
     const clicked = await clickAdvance(driver, advanceLabel);
     appendLiveLog(`[FILL] advance clicked: ${advanceLabel} ok=${clicked}`);
+    appendBrowserEvent({ type: 'fill-complete', filledCount: filled.length, nextClicked: clicked, advanceLabel });
     return { filled: filled, nextClicked: clicked };
   } catch (err) {
     appendLiveLog(`[FILL] FAILED: ${err && err.message ? err.message : err}`);
+    appendBrowserEvent({ type: 'fill-failed', error: (err && err.message) ? err.message : String(err) });
     throw err;
   }
 }

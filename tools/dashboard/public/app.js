@@ -40,7 +40,7 @@
   // ---------- state ----------
   var STEP_KEYS = ['research', 'cvSource', 'cvRendered', 'clSource', 'clRendered', 'manifest', 'userReviewed', 'applied'];
   var SIM_ACTIONS = ['retry-run', 'skip-stage'];
-  var ACTION_LABEL = { 'mark-reviewed': 'Mark reviewed', 'mark-master-cv-reviewed': 'Mark master CV reviewed', 'mark-applied': 'Mark applied', 'force-rerender': 'Force re-render', 'retry-run': 'Retry run', 'skip-stage': 'Skip stage' };
+  var ACTION_LABEL = { 'mark-reviewed': 'Mark reviewed', 'mark-master-cv-reviewed': 'Mark master CV reviewed', 'mark-applied': 'Mark applied', 'force-rerender': 'Force re-render', 'retry-run': 'Retry run', 'skip-stage': 'Skip stage', 'approve-step': 'Approve & advance' };
   var TITLES = { overview: 'Overview', workflows: 'Jobs', agents: 'Agents', interventions: 'Action Items', timeline: 'Timeline', console: 'Live Console', browser: 'Browser Agent', docslib: 'Documents library', guardrails: 'Guardrails / Safety' };
 
   var storedFilters = load('filters', {}) || {};
@@ -278,6 +278,7 @@
       + '<button data-act="force-rerender" data-folder="' + esc(a.folder) + '">Force re-render</button>'
       + '<button class="sim" data-act="retry-run" data-folder="' + esc(a.folder) + '">Retry run (sim)</button>'
       + '<button class="sim" data-act="skip-stage" data-folder="' + esc(a.folder) + '">Skip stage (sim)</button>'
+      + (a.workflowStatus === 'pending_review' ? '<button data-act="approve-step" data-folder="' + esc(a.folder) + '" data-step="' + esc(a.workflowStep || '') + '">Approve & advance: ' + esc(a.workflowStep || '') + '</button>' : '')
       + '</div>';
     return '<td colspan="8"><div class="detail-box">'
       + '<h3>' + esc(a.company) + ' &mdash; ' + esc(a.role) + ' <span class="muted">' + (a.updatedAt ? 'updated ' + esc(relTime(a.updatedAt)) : '') + '</span></h3>'
@@ -657,7 +658,7 @@
     });
   }
 
-  async function runAction(action, folders) {
+  async function runAction(action, folders, step) {
     if (!folders || !folders.length) return;
     var sim = state.prefs.simulate || SIM_ACTIONS.indexOf(action) !== -1;
     var label = ACTION_LABEL[action] || action;
@@ -666,7 +667,7 @@
     try {
       var r = await fetch('/api/action', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: action, folders: folders, simulate: sim }),
+        body: JSON.stringify({ action: action, folders: folders, simulate: sim, step: step || undefined }),
       });
       var j = await r.json();
       if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
@@ -784,7 +785,7 @@
     if ($('apps')) $('apps').addEventListener('click', function (e) {
       if (e.target.matches('input.rowchk')) return;
       var btn = e.target.closest('button[data-act]');
-      if (btn) { e.stopPropagation(); runAction(btn.dataset.act, [btn.dataset.folder]); return; }
+      if (btn) { e.stopPropagation(); runAction(btn.dataset.act, [btn.dataset.folder], btn.dataset.step); return; }
       var cp = e.target.closest('[data-copy]');
       if (cp) { e.stopPropagation(); copyText(cp.dataset.copy); return; }
       var expander = e.target.closest('button[data-expand]');
@@ -926,6 +927,42 @@
     es.onerror = function () { $('consoleStatus').textContent = 'log stream reconnecting\u2026'; };
   }
 
+  function fmtBrowserEvent(ev) {
+    if (!ev) return '';
+    if (ev.type === 'fill-start') return '[start] ' + (ev.title || '?') + ' page ' + (ev.stage || '?') + ' fields=' + (ev.fieldCount != null ? ev.fieldCount : '?');
+    if (ev.type === 'field-filled') return '[filled] ' + (ev.label || '?') + ' => "' + (ev.value != null ? ev.value : '') + '" (' + (ev.how || '?') + ')' + (ev.confidence != null ? ' conf=' + ev.confidence : '');
+    if (ev.type === 'field-error') return '[error] ' + (ev.label || '?') + ': ' + (ev.error || '?');
+    if (ev.type === 'fill-complete') return '[done] filled=' + (ev.filledCount != null ? ev.filledCount : '?') + ' nextClicked=' + (ev.nextClicked != null ? ev.nextClicked : '?');
+    if (ev.type === 'fill-failed') return '[failed] ' + (ev.error || '?');
+    return JSON.stringify(ev);
+  }
+
+  function appendBrowserProgress(ev) {
+    var el = $('browserProgress');
+    if (!el) return;
+    var line = (ev && ev.ts ? new Date(ev.ts).toLocaleTimeString() + ' ' : '') + fmtBrowserEvent(ev);
+    if (el.textContent === 'Waiting for fill events...') el.textContent = '';
+    el.textContent += (el.textContent ? '\n' : '') + line;
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function connectBrowserEvents() {
+    var es = new EventSource('/browser-events');
+    es.addEventListener('browser-event', function (ev) {
+      try { appendBrowserProgress(JSON.parse(ev.data)); } catch (e) { /* ignore */ }
+    });
+    es.addEventListener('status', function (ev) {
+      try {
+        var j = JSON.parse(ev.data);
+        if (j.state === 'no-source') {
+          var el = $('browserProgress');
+          if (el && !el.textContent.trim()) el.textContent = 'No browser events yet (.memory/browser-events.jsonl not found).';
+        }
+      } catch (e) { /* ignore */ }
+    });
+    es.onerror = function () { /* reconnecting silently */ };
+  }
+
   function loadOnce() {
     fetch('/api/data').then(function (r) { return r.json(); }).then(function (d) { state.data = d; $('ts').textContent = relTime(d.generatedAt); renderAll(); }).catch(function () { /* SSE will retry */ });
   }
@@ -975,6 +1012,7 @@
     loadOnce();
     connectData();
     connectLogs();
+    connectBrowserEvents();
     if (state.prefs.simulate) startSim();
   }
 

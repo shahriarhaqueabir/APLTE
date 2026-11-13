@@ -228,6 +228,19 @@ test('dashboard /logs streams a status frame', async () => {
   }
 });
 
+test('dashboard /browser-events streams a status frame', async () => {
+  const server = startServer(0, { quiet: true });
+  await once(server, 'listening');
+  const port = server.address().port;
+  try {
+    const { headers, body } = await readFirstFrame(port, '/browser-events');
+    assert.match(headers['content-type'], /text\/event-stream/);
+    assert.match(body, /event: status/);
+  } finally {
+    await new Promise((r) => server.close(r));
+  }
+});
+
 function makeActionFixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'jobbot-actions-'));
   const appDir = path.join(root, 'demo-app');
@@ -279,6 +292,34 @@ test('dashboard master-CV review is separate from application-document review', 
   assert.equal(manifest.application.userReviewed, undefined);
   const audit = fs.readFileSync(fx.auditPath, 'utf8').trim().split(/\r?\n/).map(JSON.parse);
   assert.equal(audit[0].action, 'mark-master-cv-reviewed');
+});
+
+test('dashboard approve-step reuses workflow gates and advances the step', async (t) => {
+  const fx = makeActionFixture();
+  t.after(() => fs.rmSync(fx.root, { recursive: true, force: true }));
+
+  const res = await performAction('approve-step', ['demo-app'], { root: fx.root, auditPath: fx.auditPath, step: 'research' });
+  assert.equal(res.results.length, 1);
+  assert.equal(res.results[0].ok, true, res.results[0].error);
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(fx.appDir, 'manifest.json'), 'utf8'));
+  assert.ok(manifest.workflow);
+  assert.equal(manifest.workflow.step, 'draft');
+  assert.equal(manifest.workflow.status, 'pending_review');
+  assert.ok(manifest.workflow.approvals.research);
+
+  const audit = fs.readFileSync(fx.auditPath, 'utf8').trim().split(/\r?\n/).map(JSON.parse);
+  assert.equal(audit.length, 1);
+  assert.equal(audit[0].action, 'approve-step');
+});
+
+test('dashboard approve-step refuses an out-of-order step', async (t) => {
+  const fx = makeActionFixture();
+  t.after(() => fs.rmSync(fx.root, { recursive: true, force: true }));
+
+  const res = await performAction('approve-step', ['demo-app'], { root: fx.root, auditPath: fx.auditPath, step: 'draft' });
+  assert.equal(res.results[0].ok, false);
+  assert.match(res.results[0].error, /Cannot approve/);
 });
 
 test('dashboard reports audit failure separately from an applied action', async (t) => {

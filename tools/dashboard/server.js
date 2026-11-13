@@ -33,6 +33,7 @@ const WATCH_PATHS = [
   { p: PATHS.applied, recursive: false },
   { p: PATHS.audit, recursive: false },
   { p: PATHS.cvLibrary, recursive: true },
+  { p: PATHS.browserEvents, recursive: false },
 ];
 
 function sha1(s) { return createHash('sha1').update(s).digest('hex'); }
@@ -184,6 +185,80 @@ function createLogStream() {
   return { addClient, removeClient: (res) => clients.delete(res), close };
 }
 
+// Tail .memory/browser-events.jsonl and stream new lines as SSE `browser-event` events.
+function createBrowserEventStream() {
+  const clients = new Set();
+  let offset = 0;
+  let lastState = null;
+
+  function stateFrame(state) {
+    lastState = state;
+    return `event: status\ndata: ${JSON.stringify({ state, source: 'browser-events' })}\n\n`;
+  }
+
+  function parseLine(line) {
+    try { return JSON.parse(line); } catch { return { raw: line }; }
+  }
+
+  function readNew() {
+    let st;
+    try { st = fs.statSync(PATHS.browserEvents); } catch { return []; }
+    if (st.size < offset) offset = 0;
+    if (st.size === offset) return [];
+    const len = st.size - offset;
+    const buf = Buffer.alloc(len);
+    let fd;
+    try {
+      fd = fs.openSync(PATHS.browserEvents, 'r');
+      fs.readSync(fd, buf, 0, len, offset);
+    } catch { return []; } finally {
+      if (fd !== undefined) try { fs.closeSync(fd); } catch { /* ignore */ }
+    }
+    offset = st.size;
+    return buf.toString('utf8').split(/\r?\n/).filter(Boolean).map(parseLine);
+  }
+
+  function write(res, frame) { try { res.write(frame); } catch { clients.delete(res); } }
+
+  function tick() {
+    const exists = fs.existsSync(PATHS.browserEvents);
+    const state = exists ? 'streaming' : 'no-source';
+    if (state !== lastState) for (const res of clients) write(res, stateFrame(state));
+    const events = readNew();
+    if (events.length) {
+      for (const ev of events) {
+        const frame = `event: browser-event\ndata: ${JSON.stringify(ev)}\n\n`;
+        for (const res of clients) write(res, frame);
+      }
+    }
+  }
+
+  const timer = setInterval(tick, 1000);
+  if (timer.unref) timer.unref();
+
+  function readTail(file, maxLines) {
+    try {
+      const text = fs.readFileSync(file, 'utf8');
+      return text.split(/\r?\n/).filter(Boolean).slice(-maxLines).map(parseLine);
+    } catch { return []; }
+  }
+
+  function addClient(res) {
+    clients.add(res);
+    if (!fs.existsSync(PATHS.browserEvents)) {
+      write(res, stateFrame('no-source'));
+      return;
+    }
+    const tail = readTail(PATHS.browserEvents, 200);
+    try { offset = fs.statSync(PATHS.browserEvents).size; } catch { offset = 0; }
+    write(res, stateFrame('streaming'));
+    for (const ev of tail) write(res, `event: browser-event\ndata: ${JSON.stringify(ev)}\n\n`);
+  }
+
+  function close() { clearInterval(timer); clients.clear(); }
+  return { addClient, removeClient: (res) => clients.delete(res), close };
+}
+
 function readBody(req, limit = 64 * 1024) {
   return new Promise((resolve, reject) => {
     let size = 0;
@@ -203,6 +278,7 @@ export function startServer(port, options = {}) {
   const getData = typeof options.getData === 'function' ? options.getData : gatherData;
   const dataStream = createDataStream(getData);
   const logStream = createLogStream();
+  const browserEventStream = createBrowserEventStream();
   const shutdownGraceMs = options.shutdownGraceMs ?? 0; // 0 = disabled (server stays up until Ctrl+C)
   let activeSseResponses = 0;
   let hasHadSseConnection = false;
@@ -253,7 +329,7 @@ export function startServer(port, options = {}) {
       }
       try {
         const body = JSON.parse(await readBody(req) || '{}');
-        const result = await performAction(body.action, body.folders, { simulate: body.simulate });
+        const result = await performAction(body.action, body.folders, { simulate: body.simulate, step: body.step });
         // An action whose audit record could not be written is not a success.
         // Keep the body parseable so the client can report what did change.
         const status = result.audit && result.audit.ok === false ? 500 : 200;
@@ -289,6 +365,19 @@ export function startServer(port, options = {}) {
       if (typeof res.flushHeaders === 'function') res.flushHeaders();
       trackSseResponse(res, logStream);
       logStream.addClient(res);
+      return;
+    }
+
+    if (url.pathname === '/browser-events') {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      });
+      if (typeof res.flushHeaders === 'function') res.flushHeaders();
+      trackSseResponse(res, browserEventStream);
+      browserEventStream.addClient(res);
       return;
     }
 
@@ -367,6 +456,7 @@ export function startServer(port, options = {}) {
     if (shutdownTimer) { clearTimeout(shutdownTimer); shutdownTimer = null; }
     dataStream.close();
     logStream.close();
+    browserEventStream.close();
   });
   const bindHost = process.env.DASHBOARD_HOST || '127.0.0.1';
   server.listen(port, bindHost, () => {

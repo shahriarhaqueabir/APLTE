@@ -14,7 +14,9 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { PATHS, ROOT } from './config.js';
 
-export const ACTIONS = ['mark-reviewed', 'mark-master-cv-reviewed', 'force-rerender', 'retry-run', 'skip-stage', 'mark-applied'];
+import { approve, advance, canAdvance } from '../../src/workflow/machine.js';
+
+export const ACTIONS = ['mark-reviewed', 'mark-master-cv-reviewed', 'force-rerender', 'retry-run', 'skip-stage', 'mark-applied', 'approve-step'];
 export const SIMULATED_ONLY = ['retry-run', 'skip-stage'];
 
 const busy = new Set();
@@ -190,6 +192,20 @@ async function markApplied(dir) {
   return { ok: true, note: already ? 'already applied' : 'marked applied' };
 }
 
+async function approveStep(dir, step) {
+  if (typeof step !== 'string' || !step.trim()) throw new Error('step required');
+  const { path: p, manifest } = readManifest(dir);
+  // Reuse the workflow machine gates verbatim — no re-implementation.
+  try {
+    approve(manifest, step.trim());
+  } catch (e) {
+    throw e;
+  }
+  if (canAdvance(manifest)) advance(manifest);
+  writeManifest(p, manifest);
+  return { ok: true, note: `approved '${step.trim()}'; now at '${manifest.workflow.step}' (${manifest.workflow.status})` };
+}
+
 async function simulated(action) {
   return { ok: true, note: `${action} simulated (no files changed)` };
 }
@@ -210,6 +226,7 @@ export async function performAction(action, folders, opts = {}) {
       const dir = safeAppDir(folder, root);
       let r;
       if (action === 'mark-applied') r = await markApplied(dir);
+      else if (action === 'approve-step') r = await approveStep(dir, opts.step);
       else if (simulate) r = await simulated(action);
       else if (action === 'mark-reviewed') r = await markReviewed(dir);
       else if (action === 'mark-master-cv-reviewed') r = await markMasterCvReviewed(dir);

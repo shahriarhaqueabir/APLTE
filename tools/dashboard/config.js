@@ -16,6 +16,7 @@ export const PATHS = {
   applied: path.join(ROOT, 'data', 'applied.jsonl'),
   audit: path.join(ROOT, 'data', 'audit.jsonl'),
   liveLog: path.join(ROOT, '.memory', 'live.log'),
+  browserEvents: path.join(ROOT, '.memory', 'browser-events.jsonl'),
   reasoningLog: path.join(ROOT, '.memory', 'reasoning.jsonl'),
   memoryDir: path.join(ROOT, '.memory'),
   publicDir: path.join(__dirname, 'public'),
