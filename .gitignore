@@ -13,8 +13,12 @@ CVs/
 cv-library/
 CV_LIBRARY.md
 
-# Project documentation is kept local (not published)
-docs/
+# Project documentation is kept local (not published), except a small
+# public-facing set that is explicitly tracked below.
+docs/research/
+docs/superpowers/
+docs/DASHBOARD_REVIEW_REPORT.md
+docs/BOM.md
 plans/
 
 # Local environment notes and agent instructions (machine-specific)
@@ -45,3 +49,31 @@ data/out/
 credentials*.json
 secrets*.json
 cookies*.json
+
+# Scaffolding store (versions may contain personal config)
+data/scaffolding/
+data/runner.json
+data/queue/
+data/answer-cache.json
+
+# Generated / personal-data artifacts (never commit)
+data/cv-sections.json
+data/dashboard-api-data.json
+dashboard-*.js
+dashboard-*.html
+dashboard-*.css
+check-dashboard.mjs
+
+# Scratch / debug scripts (never commit)
+tools/check*.mjs
+tools/debug-*.mjs
+tools/find*.mjs
+tools/get*.mjs
+tools/goto.mjs
+tools/inspect*.mjs
+tools/launch-chrome.mjs
+tools/patch*.mjs
+tools/testapprove.mjs
+tools/testbtn*.mjs
+tools/updatemanifest.mjs
+tools/browser-agent.mjs

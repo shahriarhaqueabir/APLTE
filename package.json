@@ -11,6 +11,7 @@
   },
   "scripts": {
     "test": "node --test",
+    "test:browser": "node tools/dashboard-browser-smoke.mjs",
     "osv": "node tools/osv-gate.js",
     "render": "node src/cli.js render",
     "dashboard": "node tools/dashboard/index.js"

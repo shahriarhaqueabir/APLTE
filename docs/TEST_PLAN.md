@@ -1,7 +1,7 @@
 # Test Plan — jobbot
 
 ## Current state
-- **131 tests** pass with `npm test` (13 test files: 12 under `test/`, plus `tools/dashboard-browser-test.mjs`)
+- **131 tests** pass with `npm test` (13 test files: 12 under `test/`, plus `tools/dashboard-browser-smoke.mjs`)
 - `test/gate.test.js` covers every required preparation check: job URL, explicit master-CV acknowledgement, all four tailored documents (present, non-empty, path contained, hash recorded and matching), manifest presence, and user review
 - Dashboard tests cover loopback binding, SSE startup, stream accounting, reconnect cancellation, shutdown after the final tab closes, action auditing (including audit-write failure), and the independent master-CV acknowledgement
 - Dashboard browser checks cover table-header positioning, filtering, expansion, persistence, and one-tab/two-tab shutdown behavior
