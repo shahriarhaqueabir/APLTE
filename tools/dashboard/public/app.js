@@ -905,6 +905,14 @@
     var es = new EventSource('/events');
     es.addEventListener('data', function (ev) {
       try { state.data = JSON.parse(ev.data); } catch (e) { return; }
+      // Auto-enable demo/simulate mode when demo data is present
+      if (state.data.demoMode && !state.prefs.simulate) {
+        state.prefs.simulate = true;
+        try { persist('prefs', state.prefs); } catch (e) { /* ignore */ }
+        document.body.classList.add('sim');
+        var sb = $('simBanner');
+        if (sb) sb.classList.remove('hidden');
+      }
       $('ts').textContent = relTime(state.data.generatedAt);
       setStatus('live', true);
       if (state.prefs.live) renderAll();

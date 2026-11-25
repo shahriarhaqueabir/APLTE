@@ -515,6 +515,7 @@ export function gatherData() {
     agentMonitor,
     interventions,
     timeline,
+    demoMode: existsSync(path.join(ROOT, 'data', 'demo-mode.json')),
     totals: {
       runs: runs.length,
       apps: applications.length,
