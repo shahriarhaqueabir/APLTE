@@ -1,7 +1,8 @@
 // tools/dashboard/data.js
 // Data gathering: reads files on every call (no caching) so the dashboard stays live.
 
-import fs from 'node:fs';
+import * as fs from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { PATHS, ROOT } from './config.js';
