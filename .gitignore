@@ -43,6 +43,7 @@ data/out/
 # Credentials / secrets (defensive; none are currently in the repo)
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 *.p12
