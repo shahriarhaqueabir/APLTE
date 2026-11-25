@@ -78,3 +78,9 @@ tools/testapprove.mjs
 tools/testbtn*.mjs
 tools/updatemanifest.mjs
 tools/browser-agent.mjs
+
+# Private modules (secrets, adapters, config - never committed)
+private/
+private/secrets/
+private/adapters/
+private/config/
