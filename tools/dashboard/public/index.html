@@ -102,9 +102,10 @@
   /* Sidebar - glassmorphism */
   .sidebar {
     width: 220px; flex: none;
-    background: rgba(12, 20, 35, 0.6);
-    backdrop-filter: blur(20px);
-    border-right: 1px solid var(--line);
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border-right: 1px solid rgba(59, 130, 246, 0.15);
     position: sticky; top: 0; height: 100vh; height: 100dvh;
     display: flex; flex-direction: column;
     padding: 20px 14px; gap: 4px;
@@ -128,7 +129,7 @@
   .nav-btn.active {
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(249, 115, 22, 0.08));
     border-color: var(--accent); color: var(--accent); font-weight: 600;
-    box-shadow: 0 0 12px var(--accent-glow);
+    box-shadow: 0 0 16px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.1);
   }
   .nav-btn:focus-visible, .btn:focus-visible, .tab:focus-visible, .row-control:focus-visible,
   a:focus-visible, summary:focus-visible, .clickable:focus-visible,
@@ -144,7 +145,8 @@
     display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
     padding: 14px 28px;
     background: rgba(10, 14, 26, 0.8);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
     border-bottom: 1px solid var(--line);
   }
   .topbar h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
@@ -161,9 +163,11 @@
     background: rgba(59, 130, 246, 0.06); color: var(--text);
     border: 1px solid var(--line); border-radius: var(--radius-sm);
     padding: 8px 14px; font-size: 13px; cursor: pointer;
-    transition: all 0.2s ease; font-weight: 500;
+    transition: all 0.25s ease; font-weight: 500;
+    backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); position: relative; overflow: hidden;
   }
-  .btn:hover { background: rgba(59, 130, 246, 0.1); border-color: var(--accent); box-shadow: 0 0 12px var(--accent-glow); }
+  .btn::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%); pointer-events: none; border-radius: inherit; }
+  .btn:hover { background: rgba(59, 130, 246, 0.08); border-color: var(--accent); box-shadow: 0 0 16px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.1); }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn.primary { border-color: var(--accent); color: var(--accent); }
   .btn.danger { border-color: var(--red); color: var(--red); }
@@ -198,6 +202,11 @@
     background: linear-gradient(90deg, var(--orange), var(--accent), var(--green));
     opacity: 0.6;
   }
+  .card::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 40%);
+    pointer-events: none; border-radius: inherit;
+  }
   .card:hover { transform: translateY(-6px) scale(1.02); border-color: rgba(255,255,255,0.3); box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 12px 32px rgba(0,180,216,0.25); }
   .card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
   .card .value { font-size: 32px; font-weight: 800; margin-top: 6px; letter-spacing: -1px; font-variant-numeric: tabular-nums;
@@ -215,7 +224,7 @@
 
   /* Badges - candy colors */
   .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; letter-spacing: 0.2px; }
-  .ok { background: rgba(34, 197, 94, 0.12); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.25); }
+  .ok { background: rgba(34, 197, 94, 0.12); color: var(--green); border: 1px solid rgba(34, 197, 94, 0.25); box-shadow: 0 0 8px rgba(34, 197, 94, 0.15); }
   .warn { background: rgba(234, 179, 8, 0.12); color: var(--yellow); border: 1px solid rgba(234, 179, 8, 0.25); }
   .bad { background: rgba(239, 68, 68, 0.12); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.25); }
   .muted { color: var(--muted); font-size: 12px; }
@@ -303,7 +312,7 @@
   .hidden { display: none !important; }
   .modal { position: fixed; inset: 0; border: 0; padding: 0; width: 100%; max-width: none; height: 100%; max-height: none; background: transparent; color: var(--text); z-index: 50; }
   .modal[open] { display: grid; place-items: center; }
-  .modal::backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); }
+  .modal::backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); }
   .modal-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; max-width: 480px; width: 92%; backdrop-filter: blur(20px); box-shadow: var(--shadow), 0 0 40px var(--accent-glow); }
   .modal-box h3 { margin: 0 0 12px; font-size: 18px; font-weight: 700; }
   .modal-box p { margin: 0 0 18px; font-size: 13px; color: var(--muted); }
