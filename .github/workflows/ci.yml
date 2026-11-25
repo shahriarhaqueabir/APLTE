@@ -14,6 +14,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "26"
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser
+          echo "JOBBOT_CHROME=/usr/bin/chromium-browser" >> $GITHUB_ENV
       - run: npm ci
       - run: npm test
       - run: npm run osv
