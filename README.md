@@ -16,6 +16,14 @@
 
 ---
 
+## Fun things you can do
+
+- Run a supervised browser flow that researches, tailors, and pre-fills applications while you stay in control
+- Generate role-specific CV and cover-letter drafts from one local command
+- Keep an audit trail of every gate decision - nothing uploads, nothing submits without you
+
+---
+
 ## 🎬 The story — why this exists
 
 Most "auto-apply" tools click Submit for you. That is the one action that
