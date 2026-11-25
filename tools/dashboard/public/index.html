@@ -410,8 +410,8 @@
           <button class="btn" id="fClear">Clear</button>
           <span class="bulk-count" id="filterCount"></span>
         </div>
-        <div class="next-action-bar" id="nextAction" style="margin-bottom:12px;padding:10px 14px;border-radius:10px;background:linear-gradient(135deg,rgba(0,180,216,0.1),rgba(0,255,136,0.05));border:1px solid rgba(0,180,216,0.2);">
-          <span style="font-weight:600;color:#00d4ff;">Next action:</span>
+        <div class="next-action-bar" id="nextAction" style="margin-bottom:12px;padding:10px 14px;border-radius:10px;background:linear-gradient(135deg,var(--accent-glow),var(--green-glow));border:1px solid var(--line);">
+          <span style="font-weight:600;color:var(--accent);">Next action:</span>
           <span id="nextActionText" style="margin-left:8px;">Loading...</span>
         </div>
         <div class="bar">
@@ -530,7 +530,7 @@
       <section class="view" id="view-browser">
         <h2 class="section-title">Browser agent &mdash; live form filling &amp; review</h2>
         <div class="sub-title">Current page</div>
-        <div id="browserScreenshot" style="margin-bottom:12px;min-height:200px;background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--muted);">
+        <div id="browserScreenshot" style="margin-bottom:12px;min-height:200px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--muted);">
           No screenshot yet. Run <code>jobbot scan</code> to capture the current page.
         </div>
         <div class="sub-title">Form fields</div>
