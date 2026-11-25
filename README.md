@@ -3,6 +3,7 @@
 <p align="center">
   <img src="APLTE.jpg" alt="APLTE" width="400">
 </p>
+
 > **Local-first assistant for preparing and submitting job applications on LinkedIn
 > Easy Apply.** Researches the vacancy, tailors a CV and cover letter, enforces a
 > hard preparation gate, and drives the browser fill flow — while **never
