@@ -9,9 +9,9 @@
 > hard preparation gate, and drives the browser fill flow — while **never
 > uploading a file and never clicking Submit.** 🛑
 
-[![CI](https://github.com/shahriarhaqueabir/jobbot/actions/workflows/ci.yml/badge.svg)](https://github.com/shahriarhaqueabir/jobbot/actions/workflows/ci.yml)
+[![CI](https://github.com/shahriarhaqueabir/APLTE/actions/workflows/ci.yml/badge.svg)](https://github.com/shahriarhaqueabir/APLTE/actions/workflows/ci.yml)
 [![Node.js 26.x](https://img.shields.io/badge/node-26.x-339933?logo=node.js&logoColor=white)](https://nodejs.org)
-[![Tests](https://img.shields.io/badge/tests-145%20passing-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-148%20passing-brightgreen)](#testing)
 [![OSV](https://img.shields.io/badge/osv-0%20advisories-brightgreen)](#testing)
 [![License](https://img.shields.io/badge/license-private-lightgrey)](#license)
 
@@ -191,7 +191,7 @@ Follow these steps in order. Do not skip. Each one closes a failure mode.
 
 ### Phase 7 — Tests & CI 🧪 (1 day)
 
-23. Node built-in test runner. One test file per module. 145+ tests.
+23. Node built-in test runner. One test file per module. 148 tests.
 24. Split browser smoke test into `npm run test:browser`.
 25. GitHub Actions: `npm ci` → `npm test` → `npm run osv`.
 26. `.gitleaks.toml` for secret scanning.
@@ -201,10 +201,6 @@ Follow these steps in order. Do not skip. Each one closes a failure mode.
 27. OSV gate clean. `npm audit` clean.
 28. README with badges, Mermaid diagram, quick start, commands, safety,
     testing, contributing, changelog, user guide.
-29. Push only the clean branch. Keep personal data in a separate,
-    non-git-tracked tree.
-
----
 
 ## ⚠️ Mistakes to avoid (learned the hard way)
 
@@ -245,9 +241,18 @@ Follow these steps in order. Do not skip. Each one closes a failure mode.
 ## 🚀 Quick start
 
 ```bash
+# 1. Clone
+git clone https://github.com/shahriarhaqueabir/APLTE.git
+cd APLTE
+
+# 2. Install
 npm ci
+
+# 3. Configure
 cp data/examples/profile.example.json data/profile.json
 cp data/examples/answers.example.json data/answers.json
+
+# 4. Test & run
 npm test
 npm run dashboard
 npm run render -- <input.md> [output-dir] [--lang de|en] [--title "Title"]
@@ -269,7 +274,7 @@ npm run render -- <input.md> [output-dir] [--lang de|en] [--title "Title"]
 | `jobbot approve`  | Approve a workflow step                                        |
 | `jobbot render`   | Render a markdown file to PDF + DOCX                           |
 | `jobbot verify`   | Render a PDF to PNG pages for visual inspection                |
-| `jobbot scaffold` | Verify/unlock/save/lock/reset/restore/reconcile a managed file |
+
 | `jobbot answers`  | Check an application's answers against the library             |
 
 ## 🧪 Testing
