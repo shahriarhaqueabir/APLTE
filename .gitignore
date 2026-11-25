@@ -84,3 +84,7 @@ private/
 private/secrets/
 private/adapters/
 private/config/
+
+# User data (generated on first run)
+data/preferences.json
+data/tos-acknowledgement.json
