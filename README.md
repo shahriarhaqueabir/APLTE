@@ -1,5 +1,8 @@
-# jobbot 🤖💼
+# APLTE - Apply to LinkedIn Together
 
+<p align="center">
+  <img src="APLTE.jpg" alt="APLTE" width="400">
+</p>
 > **Local-first assistant for preparing and submitting job applications on LinkedIn
 > Easy Apply.** Researches the vacancy, tailors a CV and cover letter, enforces a
 > hard preparation gate, and drives the browser fill flow — while **never
@@ -10,6 +13,14 @@
 [![Tests](https://img.shields.io/badge/tests-145%20passing-brightgreen)](#testing)
 [![OSV](https://img.shields.io/badge/osv-0%20advisories-brightgreen)](#testing)
 [![License](https://img.shields.io/badge/license-private-lightgrey)](#license)
+
+---
+
+## Fun things you can do
+
+- Run a supervised browser flow that researches, tailors, and pre-fills applications while you stay in control
+- Generate role-specific CV and cover-letter drafts from one local command
+- Keep an audit trail of every gate decision - nothing uploads, nothing submits without you
 
 ---
 
